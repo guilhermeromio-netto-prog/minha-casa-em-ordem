@@ -90,7 +90,7 @@
     PS.aviso('Lendo o PDF neste aparelho…');
     Promise.all([carregarRegras(), carregarPdfJs(), arq.arrayBuffer()]).then(function (r) {
       return P.lerPdf(r[1], new Uint8Array(r[2]), pedirSenha).then(function (pdf) { return { pdf: pdf, regras: r[0] }; });
-    }).then(function (r) { abrirRevisao(P.analisar(r.pdf.linhas, { hoje: U.hoje(), regras: S.get().regras, regrasPadrao: r.regras }), r.pdf.linhas, !!teste, arq.name); }, erroPdf);
+    }).then(function (r) { abrirRevisao(P.analisar(r.pdf.linhas, { hoje: U.hoje(), regras: S.get().regras, regrasPadrao: r.regras, itens: r.pdf.itens }), r.pdf.linhas, !!teste, arq.name); }, erroPdf);
   }
   var EXEMPLO = ['Nubank - FATURA DE EXEMPLO (dados inventados)', 'Valor total da fatura R$ 545,30', 'Data de vencimento: 10 NOV 2026', 'Fechamento: 03 NOV 2026', 'Cartão final 4321',
     '05 OUT Mercado Bom Preço R$ 250,40', '07 OUT Uber *Viagem R$ 32,90', '12 OUT Netflix.com R$ 55,90', '15 OUT Loja XYZ - Parcela 03/10 R$ 189,90', '20 OUT Estorno Loja ABC -R$ 45,00', '22 OUT Farmácia Saúde Total R$ 61,20', '02 OUT Pagamento recebido -R$ 300,00'];
@@ -100,8 +100,8 @@
   function abrirRevisao(a, linhas, teste, nome) {
     var s = S.get(), ct = s.cartoes.filter(function (c) { return a.resumo.final && c.final === a.resumo.final; })[0];
     var venc = a.resumo.vencimento || '';
-    rev = { a: a, linhas: linhas, nome: nome, teste: !!teste, cartao: ct ? ct.id : '__novo', apelido: ct ? '' : (a.bancoNome !== 'Genérico' ? a.bancoNome : 'Cartão'), final: a.resumo.final || '', venc: venc, fecha: a.resumo.fechamento || '', mes: venc ? U.ym(venc) : U.ym(U.hoje()),
-      total: a.resumo.total != null ? a.resumo.total : a.soma, dono: ct ? ct.dono : 'casal', itens: a.lancs.map(function (x) { return { inc: true, data: x.data, desc: x.desc, valor: x.valor, pa: x.pa, pt: x.pt, cat: x.cat }; }).concat(a.ignoradas.map(function (x) { return { inc: false, data: x.data, desc: x.desc, valor: x.valor, pa: x.pa, pt: x.pt, cat: x.cat, motivo: x.motivo }; })) };
+    rev = { a: a, linhas: linhas, nome: nome, teste: !!teste, cartao: ct ? ct.id : '__novo', apelido: ct ? '' : (a.bancoNome !== 'Genérico' ? a.bancoNome + (a.resumo.produto ? ' ' + a.resumo.produto : '') : 'Cartão'), final: a.resumo.final || '', venc: venc, fecha: a.resumo.fechamento || '', mes: venc ? U.ym(venc) : U.ym(U.hoje()),
+      total: a.resumo.total != null ? a.resumo.total : a.soma, dono: ct ? ct.dono : 'casal', itens: a.lancs.map(function (x) { return { inc: true, data: x.data, desc: x.desc, valor: x.valor, pa: x.pa, pt: x.pt, cat: x.cat, catBanco: x.catBanco || '', cidade: x.cidade || '' }; }).concat(a.ignoradas.map(function (x) { return { inc: false, data: x.data, desc: x.desc, valor: x.valor, pa: x.pa, pt: x.pt, cat: x.cat, motivo: x.motivo }; })) };
     PS.redesenhar(); setTimeout(function () { var e = document.querySelector('[data-fid="rv:salvar"]'); if (e) e.focus(); }, 60);
   }
   function somaRev() { var t = 0; rev.itens.forEach(function (x) { if (x.inc) t += x.valor; }); return Math.round(t * 100) / 100; }
@@ -114,13 +114,48 @@
     if (!U.dataValida(r.venc)) { PS.aviso('Informe o vencimento da fatura'); return; }
     var msg = erroSensivel([r.apelido, r.final]); if (msg) { PS.aviso(msg); return; }
     if (r.cartao === '__novo' && r.final && !/^\d{4}$/.test(r.final)) { PS.aviso('Use só os 4 últimos dígitos do cartão'); return; }
-    var fid = U.uid(), cid = r.cartao;
+    var dup = duplicada(r);
+    if (dup) {
+      PS.modal.abrir('Esta fatura já foi enviada', h('div', null, h('p', null, 'Já existe a fatura deste cartão com vencimento em ' + dataBR(dup.vencimento) + ' (' + brl(C.faturaTotal(S.get(), dup)) + '). Enviar de novo não duplica: posso substituir pelos dados deste PDF.'),
+        h('p', { class: 'nota' }, 'Substituir mantém a situação (paga ou em aberto) e troca só os lançamentos e valores.')),
+        [{ rotulo: 'Substituir', tipo: 'primario', acao: function () { gravar(r, itens, dup); } }, { rotulo: 'Cancelar' }]);
+      return;
+    }
+    gravar(r, itens, null);
+  }
+  /* mesma fatura (mesmo cartão + mesmo vencimento ou mesmo mês)? */
+  function duplicada(r) {
+    if (r.cartao === '__novo') return null;
+    return S.get().faturas.filter(function (f) { return !f.teste && f.cartao === r.cartao && ((f.vencimento && f.vencimento === r.venc) || (f.mes && f.mes === (r.mes || U.ym(r.venc)))); })[0] || null;
+  }
+  function gravar(r, itens, dup) {
+    var fid = dup ? dup.id : U.uid(), cid = r.cartao, R = r.a.resumo, fu = R.futuras || {};
     S.alterar(function (st) {
       if (cid === '__novo') { cid = U.uid(); st.cartoes.push({ id: cid, apelido: (r.apelido || 'Cartão').slice(0, 30), final: r.final, diaFecha: r.fecha ? +r.fecha.slice(8) : 0, diaVenc: +r.venc.slice(8), dono: r.dono, exemplo: false }); }
-      st.faturas.unshift({ id: fid, cartao: cid, mes: r.mes || U.ym(r.venc), valor: Math.round(Number(r.total) * 100) / 100, fechamento: U.dataValida(r.fecha) ? r.fecha : '', vencimento: r.venc, status: 'aberta', origem: 'pdf', periodo: r.a.resumo.periodo || '', parcelas: '', pagaEm: '', dono: r.dono, teste: false });
-      itens.forEach(function (x) { st.lancs.push({ id: U.uid(), fatura: fid, data: x.data, desc: P.limpar(x.desc).slice(0, 80), valor: x.valor, pa: x.pa || 0, pt: x.pt || 0, cat: x.cat, dono: r.dono }); });
+      var antiga = dup ? st.faturas.filter(function (y) { return y.id === dup.id; })[0] : null;
+      var reg = { id: fid, cartao: cid, mes: r.mes || U.ym(r.venc), valor: Math.round(Number(r.total) * 100) / 100, fechamento: U.dataValida(r.fecha) ? r.fecha : '', vencimento: r.venc, status: antiga ? antiga.status : 'aberta', origem: 'pdf', periodo: R.periodo || '', parcelas: '', pagaEm: antiga ? antiga.pagaEm : '', dono: r.dono, teste: false,
+        emissao: R.emissao || '', proxFechamento: R.proxFechamento || '', pagamentoMinimo: R.pagamentoMinimo, totalAnterior: R.totalAnterior, limiteTotal: R.limiteTotal, limiteDisponivel: R.limiteDisponivel,
+        futuroProxima: fu.proxima, futuroDemais: fu.demais, futuroTotal: fu.total, futuras: fu.lista || [] };
+      if (antiga) { st.faturas = st.faturas.map(function (y) { return y.id === dup.id ? reg : y; }); st.lancs = st.lancs.filter(function (l) { return l.fatura !== dup.id; }); } else st.faturas.unshift(reg);
+      itens.forEach(function (x) { st.lancs.push({ id: U.uid(), fatura: fid, data: x.data, desc: P.limpar(x.desc).slice(0, 80), valor: x.valor, pa: x.pa || 0, pt: x.pt || 0, cat: x.cat, dono: r.dono, catBanco: x.catBanco || '', cidade: x.cidade || '' }); });
     });
-    sel = fid; rev = null; PS.aviso('Fatura salva: ' + itens.length + ' lançamentos'); PS.redesenhar();
+    sel = fid; rev = null; PS.aviso((dup ? 'Fatura atualizada: ' : 'Fatura salva: ') + itens.length + ' lançamentos'); PS.redesenhar();
+  }
+  /* conferência dos valores lidos × o que o banco declara (só leitor com subtotais, hoje o Itaú em colunas) */
+  function confereValores(a) {
+    var V = a.validacao, R = a.resumo;
+    if (!V) return null;
+    function lin(rot, lido, banco, ok) { return h('div', { class: 'rv-conf' }, h('span', null, rot), h('strong', null, brl(lido)), banco != null ? h('small', { class: 'nota' }, 'banco: ' + brl(banco)) : null, ok == null ? null : selo(ok ? 'ok' : 'perigo', ok ? 'check' : 'alerta', ok ? 'confere' : 'diferente')); }
+    var cats = Object.keys(a.porCategoria || {}).map(function (c) { return [c, a.porCategoria[c]]; }).sort(function (x, y) { return y[1] - x[1]; });
+    var fu = R.futuras || {};
+    return h('section', { class: 'cartao' }, h('h2', null, I('check'), h('span', null, 'Conferência dos valores')),
+      lin('Compras no cartão', V.somaCartao, V.subtotalCartao, V.okCartao),
+      V.subtotalProdutos != null || V.somaProdutos ? lin('Produtos e serviços / multa e juros', V.somaProdutos, V.subtotalProdutos, V.okProdutos) : null,
+      lin('Soma de todos os lançamentos (' + a.lancs.length + ')', a.soma, V.totalLancamentos, V.okLancamentos),
+      lin('Total da fatura', R.total != null ? R.total : 0, null, R.total != null ? V.okTotal : null),
+      R.pagamentoMinimo != null ? h('p', { class: 'nota' }, 'Pagamento mínimo: ' + brl(R.pagamentoMinimo) + (R.totalAnterior != null ? ' · fatura anterior: ' + brl(R.totalAnterior) + ' (não entra na soma)' : '')) : null,
+      cats.length ? h('div', { class: 'rv-cats' }, h('small', { class: 'nota' }, 'Por categoria (como li):'), cats.map(function (c) { return h('span', { class: 'selo neutro' }, G.nomeCat(c[0]) + ' ' + brl(c[1])); })) : null,
+      fu.total != null ? h('p', { class: 'nota' }, 'Parcelas futuras que o banco informa: próxima fatura ' + brl(fu.proxima || 0) + ' · demais ' + brl(fu.demais || 0) + ' · total ' + brl(fu.total) + ' (' + (fu.lista ? fu.lista.length : 0) + ' parcelas). Ficam guardadas como "Compromissos futuros"; não somam na fatura.') : null);
   }
   function telaRevisao() {
     var r = rev, a = r.a, s = S.get(), soma = somaRev();
@@ -148,10 +183,12 @@
       h('section', { class: 'cartao' }, h('h2', null, I('busca'), h('span', null, 'Conferência')),
         h('p', null, 'Lido de "' + r.nome + '" neste aparelho · banco detectado: ', h('strong', null, a.bancoNome), ' · ', selo(conf[0], conf[1], conf[2])),
         a.avisos.map(function (t) { return h('p', { class: 'nota' }, t); }),
+        duplicada(r) ? h('p', { class: 'selo aviso' }, I('alerta'), 'Esta fatura já foi enviada: ao salvar, vou perguntar se quer substituir (não duplica).') : null,
         h('div', { class: 'campos' }, h('label', { class: 'campo' }, h('span', null, 'Cartão'), cs), h('label', { class: 'campo' }, h('span', null, 'De quem'), dn), dt('Vencimento', 'venc', 'rv:venc'), dt('Fechamento', 'fecha', 'rv:fecha'), h('label', { class: 'campo' }, h('span', null, 'Total da fatura (R$)'), tot)),
         novoBox, h('p', null, 'Soma dos lançamentos marcados: ', totalEl),
         h('label', { class: 'campo marcar' }, teste, h('span', null, 'Só testar (não salvar nada)')),
         h('p', { class: 'nota' }, 'O PDF não é enviado nem guardado. Serão salvos só data, descrição, valor, parcela e categoria. Números de cartão completos e CPF são removidos.')),
+      confereValores(a),
       h('section', { class: 'cartao' }, h('h2', null, I('lista'), h('span', null, 'Lançamentos (' + r.itens.length + ')')), h('div', { class: 'rv-lista' }, lista), r.itens.length > 400 ? h('p', { class: 'nota' }, 'Mostrando 400 de ' + r.itens.length + '.') : null),
       h('div', { class: 'acoes' },
         h('button', { class: 'btn primario', type: 'button', 'data-fid': 'rv:salvar', onclick: salvarRev }, I('check'), 'Salvar fatura'),
@@ -176,7 +213,7 @@
         h('div', { class: 'resumo-info' }, h('small', null, 'Total da fatura'), totalEl, h('div', { class: 'resumo-selos' }, st,
           f.vencimento ? selo(paga ? 'neutro' : dv < 0 ? 'perigo' : dv <= 3 ? 'aviso' : 'neutro', 'calendario', 'Vencimento ' + dataBR(f.vencimento).slice(0, 5) + (paga ? '' : ' · ' + contagem(dv, 'venceu', 'vence'))) : null,
           f.fechamento && dfc != null ? selo('neutro', 'relogio', 'Fecha ' + dataBR(f.fechamento).slice(0, 5) + (dfc >= 0 ? ' · ' + contagem(dfc, 'fechou', 'fecha') : ' · já fechou')) : null),
-          f.origem === 'pdf' ? h('small', { class: 'nota' }, 'Lida de PDF' + (f.periodo ? ' · ' + f.periodo : '') + ' · ' + ls.length + ' lançamentos') : h('small', { class: 'nota' }, 'Cadastro manual' + (f.parcelas ? ' · ' + f.parcelas : ''))),
+          f.origem === 'pdf' ? h('small', { class: 'nota' }, 'Lida de PDF' + (f.periodo ? ' · ' + f.periodo : '') + ' · ' + ls.length + ' lançamentos' + (f.pagamentoMinimo != null ? ' · mínimo ' + brl(f.pagamentoMinimo) : '')) : h('small', { class: 'nota' }, 'Cadastro manual' + (f.parcelas ? ' · ' + f.parcelas : ''))),
         G.anel(total, ref, { rotulo: 'Esta fatura', refRot: refRot })),
       h('div', { class: 'acoes' }, paga ? h('button', { class: 'btn', type: 'button', 'data-fid': 'ft:desfazer', onclick: function () { S.alterar(function (x) { F.desfazerPaga(x, 'fatura', f.id, f.mes || ''); }); PS.aviso('Desfeito: voltou para em aberto'); } }, I('desfazer'), 'Desfazer')
         : h('button', { class: 'btn primario', type: 'button', 'data-fid': 'ft:paga', onclick: function () { PS.finUI.marcar(p); } }, I('check'), 'Marcar fatura como paga'),
@@ -187,6 +224,18 @@
     PS.modal.abrir('Excluir esta fatura?', h('p', null, 'Remove a fatura e seus lançamentos deste painel (em todos os aparelhos sincronizados). Não afeta o banco.'), [{ rotulo: 'Excluir', tipo: 'perigo', acao: function () {
       S.alterar(function (x) { x.faturas = x.faturas.filter(function (y) { return y.id !== f.id; }); x.lancs = x.lancs.filter(function (l) { return l.fatura !== f.id; }); }); sel = ''; PS.aviso('Fatura excluída');
     } }, { rotulo: 'Cancelar' }]);
+  }
+  /* Compromissos futuros: parcelas que o banco lista na fatura (próxima, demais, total) */
+  function cardFuturos(f) {
+    if (!f || (f.futuroTotal == null && !(f.futuras && f.futuras.length))) return null;
+    var lista = (f.futuras || []).slice().sort(function (a, b) { return b.valor - a.valor; });
+    var tot = f.futuroTotal != null ? f.futuroTotal : lista.reduce(function (t, x) { return t + x.valor; }, 0);
+    function kv(r, v) { return h('div', { class: 'fut-kv' }, h('small', null, r), h('strong', null, brl(v))); }
+    return h('section', { class: 'cartao fut-card' }, h('h2', null, I('parcelas'), h('span', null, 'Compromissos futuros')),
+      h('div', { class: 'fut-resumo' }, f.futuroProxima != null ? kv('Próxima fatura', f.futuroProxima) : null, f.futuroDemais != null ? kv('Demais faturas', f.futuroDemais) : null, kv('Total a vencer', tot)),
+      lista.length ? h('ul', { class: 'lista-simples' }, lista.slice(0, 10).map(function (x) { return h('li', null, h('span', { class: 'ls-t' }, x.desc + ' · ' + x.pa + '/' + x.pt), h('strong', null, brl(x.valor))); })) : null,
+      lista.length > 10 ? h('p', { class: 'nota' }, '+ ' + (lista.length - 10) + ' parcelas menores.') : null,
+      h('p', { class: 'nota' }, 'Valores informados pelo banco na fatura de ' + mesRot(f.mes) + '. Cada parcela aparece com o valor de hoje e só vale como aviso do que vem aí.'));
   }
   function cardCategorias(ls) {
     var cats = C.porCategoria(ls);
@@ -272,7 +321,7 @@
     var metaIn = h('input', { type: 'number', min: 0, step: '10', value: s.config.orcamento == null ? '' : s.config.orcamento, placeholder: 'Meta mensal (R$)', 'aria-label': 'Meta mensal em reais', 'data-fid': 'ct:meta' });
     metaIn.addEventListener('change', function () { var v = metaIn.value === '' ? null : Math.max(0, Number(metaIn.value)); S.alterar(function (x) { x.config.orcamento = v; }); });
     return h('div', { class: 'cartoes' }, h('h1', { class: 'titulo-tela' }, I('cartao'), 'Cartões e faturas'), acoes, chips, cabecalho(s, f, ls, hoje),
-      h('div', { class: 'grade-cartoes' }, cardCategorias(ls), cardTop(ls), cardAssinaturas(s), cardParcelas(s, hoje), cardEvolucao(s, f)), cardLancs(s, f, ls),
+      h('div', { class: 'grade-cartoes' }, cardCategorias(ls), cardTop(ls), cardAssinaturas(s), cardParcelas(s, hoje), cardFuturos(f), cardEvolucao(s, f)), cardLancs(s, f, ls),
       h('section', { class: 'cartao' }, h('h2', null, I('meta'), h('span', null, 'Meta mensal')), h('label', { class: 'campo' }, h('span', null, 'Quanto quer gastar por fatura (opcional)'), metaIn), h('p', { class: 'nota' }, 'Com meta, o anel compara a fatura com ela; sem meta, compara com o mês anterior.')),
       cardCartoes(s),
       h('p', { class: 'nota' }, 'Leitura de PDF testada só com faturas sintéticas (inventadas). Confira sempre os valores com a fatura do banco.'));

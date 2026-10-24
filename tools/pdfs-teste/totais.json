@@ -33,5 +33,43 @@
  },
  "imagem-sintetico.pdf": {
   "imagem": true
+ },
+ "itau-colunas-set.pdf": {
+  "total": 1154.38,
+  "n": 13,
+  "banco": "itau",
+  "vencimento": "2026-09-28",
+  "final": "9999",
+  "subtotalCartao": 1054.38,
+  "subtotalProdutos": 100.0,
+  "minimo": 173.16,
+  "anterior": 500.0,
+  "futProxima": 408.83,
+  "futDemais": 748.83,
+  "futTotal": 1157.66,
+  "nFuturas": 5,
+  "parcelas": 5,
+  "emissao": "2026-09-21",
+  "cartao": 1054.38,
+  "mes": "2026-09"
+ },
+ "itau-colunas-out.pdf": {
+  "total": 995.83,
+  "n": 10,
+  "banco": "itau",
+  "vencimento": "2026-10-28",
+  "final": "9999",
+  "subtotalCartao": 895.83,
+  "subtotalProdutos": 100.0,
+  "minimo": 149.37,
+  "anterior": 1154.38,
+  "futProxima": 408.83,
+  "futDemais": 340.0,
+  "futTotal": 748.83,
+  "nFuturas": 5,
+  "parcelas": 5,
+  "emissao": "2026-10-21",
+  "cartao": 895.83,
+  "mes": "2026-10"
  }
 }

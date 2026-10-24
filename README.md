@@ -60,7 +60,7 @@ Publicação: push em `main` publica o GitHub Pages (raiz do repositório; o tok
 
 ## Limitações conhecidas
 
-- O leitor de fatura foi validado **somente com PDFs sintéticos** (Nubank, Itaú, Bradesco, com senha, só imagem). Faturas reais podem trazer layouts diferentes: por isso existe a **tela de revisão**. Não há OCR (PDF só de imagem é recusado) nem tela de mapeamento de colunas.
+- O leitor de fatura foi validado com **1 fatura real do Itaú Black (set/2026, só localmente: ela não vai para o repositório)** e com PDFs sintéticos (Nubank, Itaú simples e em duas colunas, Bradesco, com senha, só imagem). Outros bancos/produtos podem trazer layouts diferentes: por isso existe a **tela de revisão** com conferência dos valores. Não há OCR (PDF só de imagem é recusado) nem tela de mapeamento de colunas.
 - Lembretes com o app **fechado** dependem do sistema (veja `docs/LEMBRETES.md`).
 - O bloqueio do app (PIN) é só um dissuasor de tela, não criptografia.
 - Clima precisa de internet (Open-Meteo); offline mostra o último valor.

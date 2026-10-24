@@ -9,7 +9,7 @@
   var CHAVE_SYNC = 'painelsala.sync';
   var DONOS = ['gui', 'esposa', 'casal'];
   var STATUS_FAT = ['aberta', 'fechada', 'paga'];
-  var CATS = ['mercado', 'restaurante', 'transporte', 'saude', 'educacao', 'lazer', 'assinaturas', 'casa', 'compras', 'viagens', 'outros'];
+  var CATS = ['mercado', 'restaurante', 'transporte', 'saude', 'educacao', 'lazer', 'assinaturas', 'casa', 'compras', 'viagens', 'encargos', 'outros'];
   var hooksGravar = [], semHook = 0;
   var estado = null, ouvintes = [];
 
@@ -34,6 +34,17 @@
   }
   function id(x) { return (x && typeof x.id === 'string' && x.id) ? x.id.slice(0, 40) : U.uid(); }
 
+  function numOpc(v) { return (v === '' || v == null || isNaN(Number(v))) ? null : Math.round(Math.max(-1e9, Math.min(1e9, Number(v))) * 100) / 100; }
+  /* parcelas futuras da fatura (lista curta e compacta: cabe com folga no limite de 8 KB por item cifrado da sincronização) */
+  function futurasOk(a) {
+    if (!Array.isArray(a)) return [];
+    var out = [], tam = 0;
+    for (var i = 0; i < a.length && i < 80; i++) {
+      var x = a[i] || {}, it = { data: iso(x.data), desc: str(x.desc, 40), pa: Math.round(num(x.pa, 0, 99, 0)), pt: Math.round(num(x.pt, 0, 99, 0)), valor: num(x.valor, -1e9, 1e9, 0), cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'outros' };
+      tam += JSON.stringify(it).length + 1; if (tam > 3800) break; out.push(it);
+    }
+    return out;
+  }
   /* Valida e normaliza QUALQUER objeto vindo de fora (import/backup/link) */
   function sanear(o) {
     var s = vazio();
@@ -82,11 +93,14 @@
     s.faturas = arr(o.faturas).slice(0, 120).map(function (x) {
       var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, -1e9, 1e9, null);
       return { id: id(x), cartao: str(x.cartao, 40), mes: /^\d{4}-\d{2}$/.test(String(x.mes || '')) ? x.mes : '', valor: v, fechamento: iso(x.fechamento), vencimento: iso(x.vencimento),
-        status: STATUS_FAT.indexOf(x.status) >= 0 ? x.status : 'aberta', origem: x.origem === 'pdf' ? 'pdf' : 'manual', periodo: str(x.periodo, 40), parcelas: str(x.parcelas, 160), pagaEm: iso(x.pagaEm), dono: donoOk(x.dono), teste: !!x.teste, exemplo: false };
+        status: STATUS_FAT.indexOf(x.status) >= 0 ? x.status : 'aberta', origem: x.origem === 'pdf' ? 'pdf' : 'manual', periodo: str(x.periodo, 40), parcelas: str(x.parcelas, 160), pagaEm: iso(x.pagaEm), dono: donoOk(x.dono), teste: !!x.teste, exemplo: false,
+        /* extras lidos do PDF do Itaú (opcionais) */
+        emissao: iso(x.emissao), proxFechamento: iso(x.proxFechamento), pagamentoMinimo: numOpc(x.pagamentoMinimo), totalAnterior: numOpc(x.totalAnterior), limiteTotal: numOpc(x.limiteTotal), limiteDisponivel: numOpc(x.limiteDisponivel),
+        futuroProxima: numOpc(x.futuroProxima), futuroDemais: numOpc(x.futuroDemais), futuroTotal: numOpc(x.futuroTotal), futuras: futurasOk(x.futuras) };
     });
     s.lancs = arr(o.lancs).slice(0, 4000).map(function (x) {
       return { id: id(x), fatura: str(x.fatura, 40), data: iso(x.data), desc: str(x.desc, 80) || 'Lançamento', valor: num(x.valor, -1e9, 1e9, 0), pa: Math.round(num(x.pa, 0, 99, 0)), pt: Math.round(num(x.pt, 0, 99, 0)),
-        cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'outros', dono: donoOk(x.dono), exemplo: false };
+        cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'outros', dono: donoOk(x.dono), exemplo: false, catBanco: str(x.catBanco, 20), cidade: str(x.cidade, 30) };
     });
     s.regras = arr(o.regras).slice(0, 300).map(function (x) {
       return { id: id(x), termo: str(x.termo, 40).toLowerCase(), cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'outros', exemplo: false };

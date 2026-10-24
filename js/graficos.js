@@ -4,9 +4,9 @@
   'use strict';
   var PS = g.PS = g.PS || {};
   var U = PS.u, h = U.h, I = PS.icone, NS = 'http://www.w3.org/2000/svg';
-  var CORES = { mercado: '#2EBB64', restaurante: '#FFB020', transporte: '#4DA3FF', saude: '#FF6B5E', educacao: '#A98BFF', lazer: '#E20074', assinaturas: '#00C7B7', casa: '#C9D1D9', compras: '#FF8FD0', viagens: '#7BDFF2', outros: '#8A93A6' };
-  var ICONES = { mercado: 'mercado', restaurante: 'garfo', transporte: 'carro', saude: 'coracao', educacao: 'escola', lazer: 'filme', assinaturas: 'repetir', casa: 'casa', compras: 'sacola', viagens: 'aviao', outros: 'pontos' };
-  var NOMES = { mercado: 'Mercado', restaurante: 'Restaurantes/delivery', transporte: 'Transporte', saude: 'Saúde', educacao: 'Educação', lazer: 'Lazer', assinaturas: 'Assinaturas', casa: 'Casa/contas', compras: 'Compras', viagens: 'Viagens', outros: 'Outros' };
+  var CORES = { mercado: '#2EBB64', restaurante: '#FFB020', transporte: '#4DA3FF', saude: '#FF6B5E', educacao: '#A98BFF', lazer: '#E20074', assinaturas: '#00C7B7', casa: '#C9D1D9', compras: '#FF8FD0', viagens: '#7BDFF2', encargos: '#FF6B5E', outros: '#8A93A6' };
+  var ICONES = { mercado: 'mercado', restaurante: 'garfo', transporte: 'carro', saude: 'coracao', educacao: 'escola', lazer: 'filme', assinaturas: 'repetir', casa: 'casa', compras: 'sacola', viagens: 'aviao', encargos: 'alerta', outros: 'pontos' };
+  var NOMES = { mercado: 'Mercado', restaurante: 'Restaurantes/delivery', transporte: 'Transporte', saude: 'Saúde', educacao: 'Educação', lazer: 'Lazer', assinaturas: 'Assinaturas', casa: 'Casa/contas', compras: 'Compras', viagens: 'Viagens', encargos: 'Multas e juros', outros: 'Outros' };
   function brl(v) { return U.valorBRL(v); }
   function reduzido() { return !!(g.matchMedia && g.matchMedia('(prefers-reduced-motion: reduce)').matches); }
   function el(tag, at) { var e = document.createElementNS(NS, tag); Object.keys(at || {}).forEach(function (k) { e.setAttribute(k, at[k]); }); return e; }
