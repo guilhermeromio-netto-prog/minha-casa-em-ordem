@@ -36,6 +36,11 @@
       h('div', null, h('div', { class: 'temp' }, d.temp + '°'), h('div', { class: 'desc' }, info[0])),
       h('div', { class: 'det' }, h('div', null, 'Sensação ' + d.sens + '°'), h('div', null, d.min + '° / ' + d.max + '°'), h('div', null, 'Chuva ' + (d.chuva == null ? '–' : d.chuva + '%') + (d.offline ? ' (offline)' : '')))));
   }
+  function chipSync() {
+    var a = h('a', { class: 'sync-chip', href: '#/sincronizar', 'data-fid': 'sync-chip' });
+    if (PS.atualizarChipSync) PS.atualizarChipSync(a);
+    return a;
+  }
   views.hoje = { reativo: true, titulo: 'Hoje', render: function () {
     var s = S.get(), ag = U.agora(), hoje = ag.iso, nome = s.config.nome;
     var boxClima = h('div');
@@ -72,7 +77,7 @@
 
     return h('div', { class: 'hoje' },
       h('div', { class: 'coluna' },
-        h('section', { class: 'cartao relogio-cartao' }, relogio(), h('div', { class: 'data-grande' }, cap(U.dataLonga(hoje))), h('div', { class: 'saudacao' }, D.saudacao(ag.h) + (nome ? ', ' + nome : '') + ' · ' + s.config.cidade)),
+        h('section', { class: 'cartao relogio-cartao' }, relogio(), h('div', { class: 'data-grande' }, cap(U.dataLonga(hoje))), h('div', { class: 'saudacao' }, D.saudacao(ag.h) + (nome ? ', ' + nome : '') + ' · ' + s.config.cidade), chipSync()),
         cartao('Clima', 'sol', boxClima),
         frase ? cartao('Foco do dia', 'alvo', h('p', { class: 'foco' }, frase)) : null),
       h('div', { class: 'coluna' },

@@ -81,6 +81,7 @@
 
   /* Voltar: fecha modal -> volta ao Hoje -> (no Hoje) aperte 2x para sair. Retorna 'sair' quando é para sair. */
   function voltar(nativo) {
+    if (PS.bloqueio && PS.bloqueio.aberto()) return 'ok';
     if (PS.modal && PS.modal.aberto()) { PS.modal.fechar(); return 'ok'; }
     var rota = PS.rotaAtual || '';
     if (rota !== '') { saidaPendente = 0; g.location.hash = '#/'; return 'ok'; }
@@ -98,6 +99,7 @@
     if (PS.tecla) PS.tecla(e);                    /* tela de diagnóstico #/teclas registra tudo */
     PS.atividade && PS.atividade();
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (PS.capturaTecla && PS.capturaTecla(e)) return;           /* teclados numéricos (PIN) consomem dígitos e Backspace */
     var emTeclas = PS.rotaAtual === 'teclas';
     var dir = DIRS[k] || DIRS[c];
     var edit = editavel(alvo);

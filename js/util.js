@@ -88,4 +88,22 @@
   function focavel(el, extra) { el.setAttribute('tabindex', '0'); el.setAttribute('data-f', ''); if (extra) el.setAttribute('data-fid', extra); return el; }
 
   PS.u = { TZ: TZ, DIAS: DIAS, DIAS_CURTOS: DIAS_CURTOS, MESES: MESES, pad: pad, agora: agora, hoje: function () { return agora().iso; }, dowIso: dowIso, somaDias: somaDias, difDias: difDias, diasNoMes: diasNoMes, ym: ym, somaMes: somaMes, dataNoMes: dataNoMes, dataValida: dataValida, horaValida: horaValida, dataLonga: dataLonga, dataCurta: dataCurta, rotuloRelativo: rotuloRelativo, valorBRL: valorBRL, uid: uid, limitar: limitar, h: h, limpar: limpar, focavel: focavel };
+
+  /* arquivos: baixar texto/binário e escolher arquivo (modo 'texto' ou 'binario') */
+  PS.arq = {
+    baixar: function (nome, conteudo, mime) {
+      var blob = new Blob([conteudo], { type: mime || 'application/octet-stream' }), url = URL.createObjectURL(blob), a = h('a', { href: url, download: nome });
+      document.body.appendChild(a); a.click(); setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+    },
+    escolher: function (accept, aoLer, binario) {
+      var inp = h('input', { type: 'file', accept: accept, style: 'position:fixed;left:-9999px', 'aria-hidden': 'true', tabindex: '-1', id: 'ps-arquivo' });
+      inp.addEventListener('change', function () {
+        var f = inp.files && inp.files[0]; if (!f) return;
+        var r = new FileReader(); r.onload = function () { aoLer(r.result, f); }; r.onerror = function () { PS.aviso && PS.aviso('Não consegui ler o arquivo'); };
+        if (binario) r.readAsArrayBuffer(f); else r.readAsText(f);
+        if (inp.parentNode) inp.parentNode.removeChild(inp);
+      });
+      document.body.appendChild(inp); inp.click();
+    }
+  };
 })(window);

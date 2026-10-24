@@ -3,7 +3,7 @@
   'use strict';
   var PS = g.PS = g.PS || {};
   var U = PS.u, h = U.h, S = PS.store, I = PS.icone;
-  var ABAS = [['geral', 'Geral'], ['habitos', 'Hábitos'], ['tarefas', 'Tarefas'], ['agenda', 'Agenda'], ['familia', 'Família'], ['links', 'Links'], ['backup', 'Backup']];
+  var ABAS = [['geral', 'Geral'], ['habitos', 'Hábitos'], ['tarefas', 'Tarefas'], ['agenda', 'Agenda'], ['familia', 'Família'], ['links', 'Links'], ['sync', 'Sincronização'], ['backup', 'Backup']];
   var PRIO = [['alta', 'Alta'], ['media', 'Média'], ['baixa', 'Baixa']];
 
   function campoEl(item, f, aoMudar) {
@@ -196,6 +196,27 @@
       w.appendChild(h('div', { class: 'bloco' }, h('h3', null, 'Frases de foco do dia'), editor({ colecao: 'foco', rotuloAdd: 'Nova frase', novo: function () { return { id: U.uid(), texto: '' }; }, campos: [{ k: 'texto', rotulo: 'Frase', max: 140 }] })));
       return w;
     },
+    sync: function () {
+      var e = PS.sync.estado(), w = h('div');
+      w.appendChild(h('div', { class: 'form-linha' }, h('h3', null, 'Sincronização na nuvem'),
+        h('div', { class: 'status-sync ' + e.nivel }, h('span', { class: 'ic-status' }, I(e.nivel === 'ok' ? 'check' : e.nivel === 'perigo' ? 'alerta' : 'nuvem')), h('span', null, e.rotulo)),
+        e.ativo ? h('p', { class: 'nota' }, 'Família ' + e.codigo.replace(/(\d{4})(?=\d)/g, '$1 ') + ' · este aparelho: ' + e.aparelho) : h('p', { class: 'nota' }, 'Desligada. Os dados ficam só neste aparelho.'),
+        h('p', { class: 'nota' }, 'Cifrado de ponta a ponta: o servidor guarda só texto ilegível. Perder a senha E a chave de recuperação = dados da nuvem irrecuperáveis.'),
+        h('div', { class: 'acoes' }, h('a', { class: 'btn primario', href: '#/sincronizar', 'data-fid': 'gs:abrir' }, e.ativo ? 'Gerenciar conexão' : 'Criar ou entrar numa família'),
+          e.ativo ? h('button', { class: 'btn', type: 'button', onclick: function () { PS.aviso('Sincronizando…'); PS.sync.sincronizarAgora(); } }, 'Sincronizar agora') : null)));
+      var ml = h('input', { type: 'number', min: 1, max: 60, value: PS.bloqueio.minutos(), inputmode: 'numeric', 'data-fid': 'gs:min' });
+      ml.addEventListener('change', function () { PS.bloqueio.definirMinutos(Math.min(60, Math.max(1, Math.round(Number(ml.value)) || 5))); });
+      var pinI = h('input', { type: 'password', inputmode: 'numeric', maxlength: '8', autocomplete: 'off', placeholder: '4 a 8 números', 'data-fid': 'gs:pin' });
+      w.appendChild(h('div', { class: 'form-linha' }, h('h3', null, 'Bloqueio do painel neste aparelho'),
+        h('p', { class: 'nota' }, 'PIN opcional que tranca a tela depois de um tempo parado e ao abrir o app. Recomendado nos celulares; na TV costuma ficar desligado. É só privacidade de tela (não substitui a senha da família).'),
+        h('p', { class: 'nota' }, PS.bloqueio.ativo() ? 'Ligado: trava após ' + PS.bloqueio.minutos() + ' min sem uso.' : 'Desligado neste aparelho.'),
+        h('div', { class: 'campos' }, h('label', { class: 'campo' }, h('span', null, 'PIN do aparelho'), pinI), h('label', { class: 'campo' }, h('span', null, 'Travar após (minutos)'), ml)),
+        h('div', { class: 'acoes' },
+          PS.bloqueio.ativo() ? h('button', { class: 'btn perigo', type: 'button', onclick: function () { PS.bloqueio.desativar(pinI.value).then(function () { PS.aviso('Bloqueio desligado'); PS.redesenhar(); }, function (er) { PS.aviso(er.message || 'PIN incorreto'); }); } }, 'Desligar (digite o PIN)')
+            : h('button', { class: 'btn primario', type: 'button', onclick: function () { var v = pinI.value; if (!/^\d{4,8}$/.test(v)) { PS.aviso('Use de 4 a 8 números.'); return; } PS.bloqueio.ativar(v, Math.round(Number(ml.value)) || 5).then(function () { PS.aviso('Bloqueio ligado'); PS.redesenhar(); }); } }, 'Ligar bloqueio'),
+          PS.bloqueio.ativo() ? h('button', { class: 'btn', type: 'button', onclick: function () { PS.bloqueio.bloquear(); } }, 'Bloquear agora') : null)));
+      return w;
+    },
     backup: function () {
       var saida = h('div'), ta = null;
       function gerar() {
@@ -214,19 +235,18 @@
             h('button', { class: 'btn', type: 'button', onclick: function () {
               lerArquivo('.json,application/json', function (txt) {
                 var d; try { d = S.lerBackup(txt); } catch (e) { PS.aviso('Backup inválido: ' + e.message); return; }
-                PS.modal.abrir('Importar backup?', h('p', null, 'Isto SUBSTITUI todos os dados deste aparelho.'), [{ rotulo: 'Substituir', tipo: 'perigo', acao: function () { S.substituir(d, false); PS.aplicarConfig(); PS.aviso('Backup importado'); PS.redesenhar(); } }, { rotulo: 'Cancelar' }]);
+                PS.modal.abrir('Importar backup?', h('p', null, 'Isto SUBSTITUI todos os dados deste aparelho.' + (PS.sync && PS.sync.ativo() ? ' ATENÇÃO: a sincronização está ligada; os itens que não estão no backup serão apagados em TODOS os aparelhos da família.' : '')), [{ rotulo: 'Substituir', tipo: 'perigo', acao: function () { S.substituir(d, false); PS.aplicarConfig(); PS.aviso('Backup importado'); PS.redesenhar(); } }, { rotulo: 'Cancelar' }]);
               });
             } }, 'Importar JSON'))),
         h('div', { class: 'form-linha' }, h('h3', null, 'Link de configuração'),
           h('p', { class: 'nota' }, 'Configure no celular e gere um link com tudo (sem servidor: os dados vão dentro do endereço, depois do #). Abra o mesmo link no navegador da TV box. Não inclui histórico de hábitos nem tarefas concluídas. Limite prático: ~2.000 caracteres em apps de mensagem; se passar, use o arquivo JSON.'),
           h('div', { class: 'acoes' }, h('button', { class: 'btn primario', type: 'button', onclick: gerar }, 'Gerar link agora')), saida),
-        h('div', { class: 'form-linha' }, h('h3', null, 'Sincronizar por código'), h('p', { class: 'nota' }, 'Ainda não existe: exigiria um servidor. Está no plano (veja docs/GUIA-OPENCODE.md).'),
-          h('div', { class: 'acoes' }, h('button', { class: 'btn', type: 'button', disabled: 'disabled' }, 'Em breve'))),
+        h('div', { class: 'form-linha' }, h('h3', null, 'Sincronizar na nuvem'), h('p', { class: 'nota' }, 'TV e celulares com os mesmos dados, cifrados no aparelho. Veja a aba Sincronização.'), h('div', { class: 'acoes' }, h('a', { class: 'btn', href: '#/sincronizar', 'data-fid': 'gb:sync' }, 'Abrir sincronização'))),
         h('div', { class: 'form-linha' }, h('h3', null, 'Dados de exemplo e reinício'),
           h('div', { class: 'acoes' },
             h('button', { class: 'btn', type: 'button', onclick: function () { if (!S.temExemplos()) { PS.aviso('Não há itens de exemplo'); return; } S.limparExemplos(); PS.aviso('Exemplos removidos'); } }, 'Remover itens de exemplo'),
             h('button', { class: 'btn perigo', type: 'button', onclick: function () {
-              PS.modal.abrir('Apagar tudo?', h('p', null, 'Remove seus dados e volta aos exemplos iniciais. Faça um backup antes.'), [{ rotulo: 'Apagar tudo', tipo: 'perigo', acao: function () { S.apagarTudo().then(function () { PS.aplicarConfig(); PS.aviso('Dados reiniciados'); PS.redesenhar(); }); } }, { rotulo: 'Cancelar' }]);
+              PS.modal.abrir('Apagar tudo?', h('p', null, 'Remove seus dados e volta aos exemplos iniciais. Faça um backup antes.' + (PS.sync && PS.sync.ativo() ? ' ATENÇÃO: a sincronização está ligada; isto apaga os dados em TODOS os aparelhos da família. Para só desconectar este aparelho, use Sair em Sincronização.' : '')), [{ rotulo: 'Apagar tudo', tipo: 'perigo', acao: function () { S.apagarTudo().then(function () { PS.aplicarConfig(); PS.aviso('Dados reiniciados'); PS.redesenhar(); }); } }, { rotulo: 'Cancelar' }]);
             } }, 'Apagar tudo'))));
     }
   };

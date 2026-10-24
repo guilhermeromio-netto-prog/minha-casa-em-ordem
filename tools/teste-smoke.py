@@ -23,7 +23,7 @@ falhas, ok = [], []
 def check(cond, msg):
     (ok if cond else falhas).append(msg); print(('  ok   ' if cond else '  FALHA ') + msg)
 
-ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'relaxar', 'gerenciar', 'gerenciar/habitos', 'gerenciar/tarefas', 'gerenciar/agenda', 'gerenciar/familia', 'gerenciar/links', 'gerenciar/backup', 'teclas', 'instalar']
+ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'relaxar', 'gerenciar', 'gerenciar/habitos', 'gerenciar/tarefas', 'gerenciar/agenda', 'gerenciar/familia', 'gerenciar/links', 'gerenciar/sync', 'gerenciar/backup', 'sincronizar', 'teclas', 'instalar']
 NOMES = {'': 'hoje'}
 
 def novo_ctx(b, w, h, **kw):

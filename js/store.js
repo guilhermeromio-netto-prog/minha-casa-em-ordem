@@ -4,21 +4,28 @@
   var PS = g.PS = g.PS || {};
   var U = PS.u;
   var CHAVE = 'painelsala.dados';
-  var VERSAO = 2;
+  var VERSAO = 3;
   var CHAVE_MIG = 'painelsala.migracoes';
+  var CHAVE_SYNC = 'painelsala.sync';
+  var DONOS = ['gui', 'esposa', 'casal'];
+  var STATUS_FAT = ['aberta', 'fechada', 'paga'];
+  var CATS = ['mercado', 'restaurante', 'transporte', 'saude', 'educacao', 'lazer', 'assinaturas', 'casa', 'compras', 'viagens', 'outros'];
+  var hooksGravar = [], semHook = 0;
   var estado = null, ouvintes = [];
 
-  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '' };
+  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos' };
   var PRIORIDADES = ['alta', 'media', 'baixa'];
 
   function vazio() {
-    return { app: 'painel-sala', versao: VERSAO, config: copia(PADRAO_CONFIG), habitos: [], listas: ['Casa', 'Trabalho', 'Maria Alice'], tarefas: [], compromissos: [], lembretes: [], contas: [], links: [], foco: [], checks: {} };
+    return { app: 'painel-sala', versao: VERSAO, config: copia(PADRAO_CONFIG), habitos: [], listas: ['Casa', 'Trabalho', 'Maria Alice'], tarefas: [], compromissos: [], lembretes: [], contas: [], links: [], foco: [], cartoes: [], faturas: [], lancs: [], regras: [], radios: [], passeios: [], programa: [], checks: {} };
   }
   function copia(o) { return JSON.parse(JSON.stringify(o)); }
   function str(v, n) { return U.limitar(v == null ? '' : String(v).replace(/[\u0000-\u001f]/g, ' '), n || 120).trim(); }
   function num(v, a, b, d) { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; }
   function urlOk(u) { return typeof u === 'string' && /^https?:\/\/[^\s]+$/i.test(u) && u.length <= 600; }
   function arr(v) { return Array.isArray(v) ? v : []; }
+  function donoOk(v) { return DONOS.indexOf(v) >= 0 ? v : ''; }
+  function iso(v) { return typeof v === 'string' && U.dataValida(v) ? v : ''; }
   function id(x) { return (x && typeof x.id === 'string' && x.id) ? x.id.slice(0, 40) : U.uid(); }
 
   /* Valida e normaliza QUALQUER objeto vindo de fora (import/backup/link) */
@@ -30,7 +37,8 @@
       cidade: str(c.cidade, 80) || PADRAO_CONFIG.cidade,
       lat: num(c.lat, -90, 90, PADRAO_CONFIG.lat), lon: num(c.lon, -180, 180, PADRAO_CONFIG.lon),
       fonte: Math.round(num(c.fonte, 1, 3, 1)), contraste: !!c.contraste, noiteAuto: c.noiteAuto !== false,
-      escurecerMin: Math.round(num(c.escurecerMin, 0, 120, 10)), nome: str(c.nome, 40)
+      escurecerMin: Math.round(num(c.escurecerMin, 0, 120, 10)), nome: str(c.nome, 40),
+      esposa: str(c.esposa, 20) || PADRAO_CONFIG.esposa, filtroDono: ['todos', 'meus', 'dela', 'nos'].indexOf(c.filtroDono) >= 0 ? c.filtroDono : 'todos'
     };
     s.habitos = arr(o.habitos).slice(0, 30).map(function (x) {
       return { id: id(x), nome: str(x.nome, 40) || 'Hábito', icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'check', exemplo: !!x.exemplo };
@@ -38,10 +46,10 @@
     s.listas = arr(o.listas).slice(0, 12).map(function (x) { return str(typeof x === 'string' ? x : (x && x.nome), 30); }).filter(Boolean);
     if (!s.listas.length) s.listas = ['Casa', 'Trabalho', 'Maria Alice'];
     s.tarefas = arr(o.tarefas).slice(0, 400).map(function (x) {
-      return { id: id(x), lista: str(x.lista, 30) || s.listas[0], titulo: str(x.titulo, 120) || 'Tarefa', prio: PRIORIDADES.indexOf(x.prio) >= 0 ? x.prio : 'media', vence: U.dataValida(x.vence) ? x.vence : '', feita: !!x.feita, exemplo: !!x.exemplo };
+      return { id: id(x), lista: str(x.lista, 30) || s.listas[0], titulo: str(x.titulo, 120) || 'Tarefa', prio: PRIORIDADES.indexOf(x.prio) >= 0 ? x.prio : 'media', vence: U.dataValida(x.vence) ? x.vence : '', feita: !!x.feita, dono: donoOk(x.dono), exemplo: !!x.exemplo };
     });
     s.compromissos = arr(o.compromissos).slice(0, 600).filter(function (x) { return U.dataValida(x.data); }).map(function (x) {
-      return { id: id(x), titulo: str(x.titulo, 120) || 'Compromisso', data: x.data, hora: U.horaValida(x.hora) ? x.hora : '', local: str(x.local, 80), fonte: x.fonte === 'ics' ? 'ics' : 'manual', exemplo: !!x.exemplo };
+      return { id: id(x), titulo: str(x.titulo, 120) || 'Compromisso', data: x.data, hora: U.horaValida(x.hora) ? x.hora : '', local: str(x.local, 80), fonte: x.fonte === 'ics' ? 'ics' : 'manual', dono: donoOk(x.dono), exemplo: !!x.exemplo };
     });
     s.lembretes = arr(o.lembretes).slice(0, 60).map(function (x) {
       var feitos = {}; if (x.feitos && typeof x.feitos === 'object') Object.keys(x.feitos).slice(0, 36).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k) && x.feitos[k]) feitos[k] = true; });
@@ -58,6 +66,30 @@
       return { id: id(x), titulo: str(x.titulo, 40) || 'Link', url: x.url, icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'globo', exemplo: !!x.exemplo };
     });
     s.foco = arr(o.foco).slice(0, 60).map(function (x) { return { id: id(x), texto: str(typeof x === 'string' ? x : x.texto, 140), exemplo: !!(x && x.exemplo) }; }).filter(function (x) { return x.texto; });
+    s.cartoes = arr(o.cartoes).slice(0, 12).map(function (x) {
+      return { id: id(x), apelido: str(x.apelido, 30) || 'Cartão', final: /^\d{4}$/.test(String(x.final || '')) ? String(x.final) : '', dono: donoOk(x.dono) || 'casal', exemplo: false };
+    });
+    s.faturas = arr(o.faturas).slice(0, 120).map(function (x) {
+      var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, -1e9, 1e9, null);
+      return { id: id(x), cartao: str(x.cartao, 40), mes: /^\d{4}-\d{2}$/.test(String(x.mes || '')) ? x.mes : '', valor: v, fechamento: iso(x.fechamento), vencimento: iso(x.vencimento),
+        status: STATUS_FAT.indexOf(x.status) >= 0 ? x.status : 'aberta', origem: x.origem === 'pdf' ? 'pdf' : 'manual', periodo: str(x.periodo, 40), parcelas: str(x.parcelas, 160), dono: donoOk(x.dono), teste: !!x.teste, exemplo: false };
+    });
+    s.lancs = arr(o.lancs).slice(0, 4000).map(function (x) {
+      return { id: id(x), fatura: str(x.fatura, 40), data: iso(x.data), desc: str(x.desc, 80) || 'Lançamento', valor: num(x.valor, -1e9, 1e9, 0), pa: Math.round(num(x.pa, 0, 99, 0)), pt: Math.round(num(x.pt, 0, 99, 0)),
+        cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'outros', dono: donoOk(x.dono), exemplo: false };
+    });
+    s.regras = arr(o.regras).slice(0, 300).map(function (x) {
+      return { id: id(x), termo: str(x.termo, 40).toLowerCase(), cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'outros', exemplo: false };
+    }).filter(function (x) { return x.termo; });
+    s.radios = arr(o.radios).slice(0, 24).filter(function (x) { return !x.url || /^https:\/\/[^\s]+$/i.test(x.url); }).map(function (x) {
+      return { id: id(x), nome: str(x.nome, 30) || 'Rádio', url: /^https:\/\/[^\s]+$/i.test(x.url || '') && x.url.length <= 600 ? x.url : '', site: urlOk(x.site) ? x.site : '', cor: /^#[0-9a-fA-F]{6}$/.test(x.cor || '') ? x.cor : '#E20074', obs: str(x.obs, 100), exemplo: false };
+    });
+    s.passeios = arr(o.passeios).slice(0, 80).map(function (x) {
+      return { id: id(x), nome: str(x.nome, 80) || 'Passeio', cat: str(x.cat, 20), cidade: str(x.cidade, 60), endereco: str(x.endereco, 120), lat: num(x.lat, -90, 90, null), lon: num(x.lon, -180, 180, null), obs: str(x.obs, 120), exemplo: false };
+    });
+    s.programa = arr(o.programa).slice(0, 200).map(function (x) {
+      return { id: id(x), titulo: str(x.titulo, 100) || 'Passeio', data: iso(x.data), hora: U.horaValida(x.hora) ? x.hora : '', local: str(x.local, 120), mapa: urlOk(x.mapa) ? x.mapa : '', compromisso: str(x.compromisso, 40), exemplo: false };
+    });
     if (o.checks && typeof o.checks === 'object') {
       Object.keys(o.checks).forEach(function (k) {
         if (U.dataValida(k) && Array.isArray(o.checks[k])) s.checks[k] = o.checks[k].filter(function (v) { return typeof v === 'string'; }).slice(0, 40);
@@ -67,7 +99,7 @@
   }
 
   /* Migrações futuras: migracoes[N] converte do schema N para N+1 */
-  var migracoes = { 1: function (o) { return o; } };   /* 1 -> 2: campos novos (icone, prio, categoria, feito) são opcionais; sanear() preenche */
+  var migracoes = { 1: function (o) { return o; }, 2: function (o) { return o; } };   /* campos novos são opcionais; sanear() preenche */
   function migrar(o) {
     var v = (o && o.versao) || 1;
     while (v < VERSAO && migracoes[v]) { o = migracoes[v](o); v++; o.versao = v; }
@@ -88,7 +120,9 @@
   function lerMigracoes() { try { var l = JSON.parse(localStorage.getItem(CHAVE_MIG) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
   function gravarMigracoes(l) { try { localStorage.setItem(CHAVE_MIG, JSON.stringify(l)); } catch (e) { /* ok */ } }
   function marcarTodasMigracoes() { gravarMigracoes(MIGRACOES_UNICAS.map(function (m) { return m.id; })); }
+  function sincronizando() { try { return !!localStorage.getItem(CHAVE_SYNC); } catch (e) { return false; } }
   function aplicarMigracoesUnicas(s) {
+    if (sincronizando()) return false;      /* com a nuvem ligada, o conteúdo vem da família; migração local criaria duplicatas */
     var feitas = lerMigracoes(), mudou = false;
     MIGRACOES_UNICAS.forEach(function (m) {
       if (feitas.indexOf(m.id) >= 0) return;
@@ -100,6 +134,7 @@
   }
 
   function persistir() {
+    if (!semHook) hooksGravar.slice().forEach(function (f) { try { f(); } catch (e) { /* ok */ } });
     try { localStorage.setItem(CHAVE, JSON.stringify(estado)); return true; } catch (e) { PS.aviso && PS.aviso('Não foi possível salvar neste navegador'); return false; }
   }
   function notificar() { ouvintes.slice().forEach(function (f) { try { f(estado); } catch (e) { console.error(e); } }); }
@@ -131,6 +166,21 @@
         .then(function () { persistir(); return estado; });
     },
     get: function () { return estado; },
+    /* a sincronização grava itens recebidos sem disparar um novo envio */
+    aplicarRemoto: function (fn) { semHook++; try { fn(estado); persistir(); } finally { semHook--; } notificar(); },
+    aoGravar: function (f) { hooksGravar.push(f); },
+    sanearItem: function (c, id, d) {
+      if (c === 'checks') return d === 1 ? 1 : null;
+      if (c === 'meta') {
+        if (id === 'config') { var cf = copia(estado.config); Object.keys(d || {}).forEach(function (k) { cf[k] = d[k]; }); return sanear({ config: cf }).config; }
+        if (id === 'listas') return Array.isArray(d) ? sanear({ listas: d }).listas : null;
+        return null;
+      }
+      if (!d || typeof d !== 'object') return null;
+      var o = {}; o[c] = [d]; var r = sanear(o)[c];
+      return r && r[0] ? r[0] : null;
+    },
+    CATS: CATS, DONOS: DONOS,
     /* altera e salva; quem chama pode passar silencioso=true para não re-renderizar */
     alterar: function (fn, silencioso) { fn(estado); persistir(); if (!silencioso) notificar(); },
     aoMudar: function (f) { ouvintes.push(f); return function () { ouvintes = ouvintes.filter(function (x) { return x !== f; }); }; },

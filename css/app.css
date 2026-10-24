@@ -185,3 +185,28 @@ textarea.entrada { min-height: 5rem; font-size: .6rem; font-family: ui-monospace
 .item .ic.ic-fam { width: 1.15rem; height: 1.15rem; color: var(--c-magenta-claro); margin-top: 0; }
 .item.dupla .ic.ic-fam { margin-top: .15rem; }
 .selo.neutro { color: var(--c-texto-2); border-color: var(--c-linha); }
+
+/* ---- sincronização, teclado numérico, bloqueio ---- */
+.relogio-cartao { position: relative; }
+.relogio-cartao .sync-chip { position: absolute; top: .5rem; right: .6rem; }
+.sync-chip { display: inline-flex; align-items: center; gap: .3rem; padding: .12rem .55rem; border-radius: 99px; border: 1.5px solid currentColor; font-size: .6rem; font-weight: 800; color: var(--c-texto-2); background: rgba(0,0,0,.25); max-width: 100%; }
+.sync-chip .ic { width: .8em; height: .8em; }
+.sync-chip.ok, .status-sync.ok { color: var(--c-ok); } .sync-chip.aviso, .status-sync.aviso { color: var(--c-aviso); } .sync-chip.perigo, .status-sync.perigo { color: var(--c-perigo); }
+.status-sync { display: flex; align-items: center; gap: .4rem; font-size: .8rem; font-weight: 800; margin: .2rem 0 .4rem; color: var(--c-texto-2); }
+.status-sync .ic { width: 1.1em; height: 1.1em; }
+.tela-sync .cartao { margin-bottom: .6rem; max-width: 34rem; }
+.passo-titulo { font-size: 1rem; font-weight: 800; margin-bottom: .2rem; }
+.teclado-caixa { margin: .5rem 0; max-width: 17rem; }
+.visor { font-size: 1.5rem; font-weight: 800; letter-spacing: .18em; text-align: center; min-height: 2.4rem; padding: .3rem; border-radius: var(--raio); background: var(--c-fundo-0); border: 2px solid var(--c-linha); margin-bottom: .4rem; font-variant-numeric: tabular-nums; }
+.teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem; }
+.tecla { min-height: 2.3rem; border-radius: var(--raio); border: 2px solid var(--c-linha); background: var(--c-superficie-2); color: var(--c-texto); font-size: 1.1rem; font-weight: 800; }
+.tecla-ok { background: var(--c-magenta); border-color: var(--c-magenta); color: var(--c-sobre-magenta); }
+.segredo { margin: .5rem 0; padding: .45rem .6rem; background: var(--c-fundo-0); border-radius: var(--raio); border-left: .2rem solid var(--c-magenta); }
+.segredo .rot { display: block; font-size: .58rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c-texto-2); }
+.codigo-grande { font-size: 1.8rem; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+.chave { font-size: 1rem; letter-spacing: .08em; word-break: break-all; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.ap-linha { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .25rem 0; border-bottom: 1px solid var(--c-linha); }
+.ap-linha .t { font-weight: 700; font-size: .8rem; flex: 1 1 8rem; } .ap-linha .meta { font-size: .62rem; color: var(--c-texto-2); }
+.bloqueio-tela { z-index: 100; background: rgba(0,0,0,.97); }
+.campo input[type="password"] { min-height: 1.9rem; padding: .25rem .5rem; border-radius: var(--raio); border: 2px solid var(--c-linha); background: var(--c-fundo-0); color: var(--c-texto); font-size: .8rem; }
+@media (max-width: 799px) { .tecla { min-height: 3rem; font-size: 1.3rem; } .visor { font-size: 1.6rem; } .campo input[type="password"] { font-size: 1rem; min-height: 2.6rem; } }

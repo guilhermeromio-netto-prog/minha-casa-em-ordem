@@ -3,7 +3,7 @@
   'use strict';
   var PS = g.PS = g.PS || {};
   var U = PS.u, S = PS.store;
-  var ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'relaxar', 'gerenciar', 'teclas', 'importar', 'instalar'];
+  var ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'relaxar', 'gerenciar', 'teclas', 'importar', 'instalar', 'sincronizar'];
   var viewAtual = null, paramAtual = '';
   var principal = function () { return document.getElementById('app'); };
 
@@ -26,7 +26,7 @@
     var as = document.querySelectorAll('.menu a');
     Array.prototype.forEach.call(as, function (a) {
       var r = a.getAttribute('href').replace('#/', '');
-      if (r === (PS.rotaAtual === 'importar' || PS.rotaAtual === 'teclas' || PS.rotaAtual === 'instalar' ? '__' : PS.rotaAtual)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      if (r === (PS.rotaAtual === 'importar' || PS.rotaAtual === 'teclas' || PS.rotaAtual === 'instalar' || PS.rotaAtual === 'sincronizar' ? '__' : PS.rotaAtual)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
   }
 
@@ -80,6 +80,7 @@
   function iniciar() {
     S.iniciar('dados.json').then(function () {
       PS.aplicarConfig();
+      if (PS.sync) PS.sync.aoMudar(function () { if (viewAtual === 'hoje') { var chip = document.querySelector('.sync-chip'); if (chip && PS.atualizarChipSync) PS.atualizarChipSync(chip); } });
       S.aoMudar(function () { var v = PS.views[viewAtual]; if (v && v.reativo) desenhar(true); });
       g.addEventListener('hashchange', function () { rotear(false); });
       g.addEventListener('storage', function (e) { if (e.key === 'painelsala.dados') { S.iniciar().then(function () { PS.aplicarConfig(); PS.redesenhar(); }); } });
@@ -89,6 +90,8 @@
       var sp = document.getElementById('splash');
       setTimeout(function () { if (sp) { sp.classList.add('fim'); setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 600); } }, 700);
       registrarSW();
+      if (PS.sync) PS.sync.iniciar();
+      if (PS.bloqueio) PS.bloqueio.aoAbrir();
     }).catch(function (e) { console.error(e); document.getElementById('app').textContent = 'Erro ao iniciar: ' + e.message; });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();

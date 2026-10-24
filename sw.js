@@ -1,8 +1,8 @@
 /* Service worker simples: rede primeiro, cache como reserva (casca offline). Troque VERSAO a cada release (tools/versionar.sh faz isso). */
-var VERSAO = 'painel-sala-2f12161';
+var VERSAO = 'painel-sala-833563c';
 var ARQUIVOS = ['./', 'index.html', 'dados.json', 'manifest.webmanifest', 'assets/favicon.svg', 'icons/icon-192.png',
   'css/tokens.css', 'css/base.css', 'css/app.css',
-  'js/util.js', 'js/icons.js', 'js/store.js', 'js/dominio.js', 'js/clima.js', 'js/ics.js', 'js/nav.js', 'js/energia.js', 'js/telas.js', 'js/gerenciar.js', 'js/app.js'];
+  'js/util.js', 'js/cripto.js', 'js/sync-nucleo.js', 'js/sync.js', 'js/sincronizar.js', 'js/bloqueio.js', 'js/icons.js', 'js/store.js', 'js/dominio.js', 'js/clima.js', 'js/ics.js', 'js/nav.js', 'js/energia.js', 'js/telas.js', 'js/gerenciar.js', 'js/app.js'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSAO).then(function (c) { return c.addAll(ARQUIVOS); }).then(function () { return self.skipWaiting(); }));
