@@ -90,7 +90,9 @@
     var cats = H.porCategoria.filter(function (c) { return c.atual || c.anterior; }).slice(0, 6).map(function (c) {
       return h('tr', null, h('th', { scope: 'row' }, NOME_CAT[c.cat] || c.cat), h('td', null, brl(c.anterior)), h('td', null, brl(c.atual)), h('td', null, deltaTxt(c)));
     });
-    return h('div', { class: 'hist' }, barras(ms),
+    var catsAtual = H.porCategoria.filter(function (c) { return c.atual > 0; }).map(function (c) { return { id: c.cat, rotulo: NOME_CAT[c.cat] || c.cat, valor: c.atual, cor: PS.graf.corDe(c.cat), icone: PS.graf.iconeCat(c.cat) }; });
+    return h('div', { class: 'hist' }, PS.graf.barras(ms.map(function (m) { return { mes: m.mes, total: m.total, vs: m.vs }; }), { titulo: 'Gasto por mês (contas + faturas)' }),
+      catsAtual.length ? h('div', null, h('h3', null, 'Este mês por categoria'), PS.graf.donut(catsAtual, { titulo: 'Este mês por categoria', centro: 'No mês' })) : null,
       h('table', { class: 'tab-hist' }, h('caption', null, 'Mês a mês (contas de casa + faturas)'), h('thead', null, h('tr', null, ['Mês', 'Contas', 'Faturas', 'Total', 'vs. mês anterior'].map(function (x) { return h('th', { scope: 'col' }, x); }))), h('tbody', null, linhas)),
       cats.length ? h('table', { class: 'tab-hist' }, h('caption', null, 'Por categoria: mês passado → este mês'), h('thead', null, h('tr', null, ['Categoria', 'Anterior', 'Atual', 'Variação'].map(function (x) { return h('th', { scope: 'col' }, x); }))), h('tbody', null, cats)) : null);
   }
@@ -121,10 +123,10 @@
 
   function totais(s, hoje) {
     var t = F.totaisDoMes(s, hoje);
-    return h('div', { class: 'totais-mes', 'aria-label': 'Totais do mês' },
+    return h('div', { class: 'totais-wrap' }, PS.graf.pagoAberto(t.pago, t.aPagar), h('div', { class: 'totais-mes', 'aria-label': 'Totais do mês' },
       h('div', null, h('small', null, 'A pagar neste mês'), h('strong', null, brl(t.aPagar))),
       h('div', { class: 'pago' }, h('small', null, 'Já pago'), h('strong', null, brl(t.pago))),
-      h('div', null, h('small', null, 'Contas'), h('strong', null, t.nPagas + '/' + t.n)));
+      h('div', null, h('small', null, 'Contas'), h('strong', null, t.nPagas + '/' + t.n))));
   }
 
   function painel(s, hoje) {

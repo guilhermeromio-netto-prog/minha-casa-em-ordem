@@ -1,0 +1,37 @@
+{
+ "nubank-sintetico.pdf": {
+  "total": 545.3,
+  "n": 6,
+  "banco": "nubank",
+  "vencimento": "2026-11-10",
+  "final": "4321",
+  "parcelas": 1,
+  "creditos": 1
+ },
+ "itau-sintetico.pdf": {
+  "total": 1102.3,
+  "n": 6,
+  "banco": "itau",
+  "vencimento": "2026-11-15",
+  "final": "9876",
+  "parcelas": 1,
+  "creditos": 1
+ },
+ "bradesco-sintetico.pdf": {
+  "total": 1312.07,
+  "n": 6,
+  "banco": "bradesco",
+  "vencimento": "2026-11-20",
+  "final": "1111",
+  "parcelas": 2,
+  "creditos": 0
+ },
+ "protegido-sintetico.pdf": {
+  "senha": "senha123",
+  "total": 545.3,
+  "n": 6
+ },
+ "imagem-sintetico.pdf": {
+  "imagem": true
+ }
+}

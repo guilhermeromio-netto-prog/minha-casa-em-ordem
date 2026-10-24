@@ -56,11 +56,23 @@
     cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     arvore: '<path d="M12 21v-6"/><path d="M12 15a5 5 0 0 0 4-8 4 4 0 0 0-8 0 5 5 0 0 0 4 8z"/>',
     guarda: '<path d="M6 3h12v18l-6-4-6 4z"/>',
-    busca: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'
+    busca: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    garfo: '<path d="M7 3v8a2 2 0 0 0 2 2v8M11 3v8a2 2 0 0 1-2 2M9 3v6M17 21V3c-2 1-3.5 4-3.5 8H17"/>',
+    carro: '<path d="M5 16l1.5-5.5A2 2 0 0 1 8.4 9h7.2a2 2 0 0 1 1.9 1.5L19 16"/><rect x="3" y="16" width="18" height="4" rx="1.5"/><path d="M7 18h.01M17 18h.01"/>',
+    coracao: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/>',
+    sacola: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    aviao: '<path d="M3 12l18-8-5 17-4-7z"/><path d="M12 14l9-10"/>',
+    repetir: '<path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/>',
+    pontos: '<path d="M6 12h.01M12 12h.01M18 12h.01"/>',
+    parcelas: '<rect x="3" y="5" width="14" height="10" rx="2"/><path d="M7 19h12a2 2 0 0 0 2-2V9"/>',
+    gas: '<path d="M12 3s5 4.500 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 .3 1.500 1 2 2 2 0-3-1-5 1-7z"/>',
+    pago: '<circle cx="12" cy="12" r="9"/><path d="M8 12.500l3 3 5-6"/>',
+    meta: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r=".8"/>',
+    csv: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>'
   };
   PS.iconesLista = Object.keys(P);
   /* ícones oferecidos para lembretes e contas (rótulos em PT-BR) */
-  PS.iconesFamilia = [['', 'Nenhum'], ['casa-de-cachorro', 'Casinha de cachorro'], ['pata', 'Pet (patinha)'], ['escola', 'Escola'], ['carteira', 'Conta / carteira'], ['luz', 'Luz'], ['agua', 'Água'], ['internet', 'Internet'], ['mercado', 'Mercado'], ['casa', 'Casa'], ['remedio', 'Saúde'], ['livro', 'Livro'], ['sino', 'Aviso'], ['familia', 'Família'], ['estrela', 'Estrela']];
+  PS.iconesFamilia = [['', 'Nenhum'], ['casa-de-cachorro', 'Casinha de cachorro'], ['pata', 'Pet (patinha)'], ['escola', 'Escola'], ['carteira', 'Conta / carteira'], ['luz', 'Luz'], ['agua', 'Água'], ['gas', 'Gás'], ['cartao', 'Cartão'], ['carro', 'Carro / transporte'], ['sacola', 'Compras'], ['aviao', 'Viagem'], ['repetir', 'Assinatura'], ['internet', 'Internet'], ['mercado', 'Mercado'], ['casa', 'Casa'], ['remedio', 'Saúde'], ['livro', 'Livro'], ['sino', 'Aviso'], ['familia', 'Família'], ['estrela', 'Estrela']];
   PS.iconeFamiliaOk = function (n) { return PS.iconesFamilia.some(function (x) { return x[0] === n; }); };
   PS.icone = function (nome, cls) {
     var s = document.createElement('span');

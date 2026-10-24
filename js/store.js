@@ -13,7 +13,7 @@
   var hooksGravar = [], semHook = 0;
   var estado = null, ouvintes = [];
 
-  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos', antecedencia: [3, 1, 0], notificar: false };
+  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos', antecedencia: [3, 1, 0], notificar: false, orcamento: null };
   var PRIORIDADES = ['alta', 'media', 'baixa'];
 
   function vazio() {
@@ -45,7 +45,7 @@
       fonte: Math.round(num(c.fonte, 1, 3, 1)), contraste: !!c.contraste, noiteAuto: c.noiteAuto !== false,
       escurecerMin: Math.round(num(c.escurecerMin, 0, 120, 10)), nome: str(c.nome, 40),
       esposa: str(c.esposa, 20) || PADRAO_CONFIG.esposa, filtroDono: ['todos', 'meus', 'dela', 'nos'].indexOf(c.filtroDono) >= 0 ? c.filtroDono : 'todos',
-      antecedencia: antecOk(c.antecedencia), notificar: c.notificar === true
+      antecedencia: antecOk(c.antecedencia), notificar: c.notificar === true, orcamento: c.orcamento == null || c.orcamento === '' ? null : num(c.orcamento, 0, 1e8, null)
     };
     s.habitos = arr(o.habitos).slice(0, 30).map(function (x) {
       return { id: id(x), nome: str(x.nome, 40) || 'Hábito', icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'check', exemplo: !!x.exemplo };
@@ -77,7 +77,7 @@
     });
     s.foco = arr(o.foco).slice(0, 60).map(function (x) { return { id: id(x), texto: str(typeof x === 'string' ? x : x.texto, 140), exemplo: !!(x && x.exemplo) }; }).filter(function (x) { return x.texto; });
     s.cartoes = arr(o.cartoes).slice(0, 12).map(function (x) {
-      return { id: id(x), apelido: str(x.apelido, 30) || 'Cartão', final: /^\d{4}$/.test(String(x.final || '')) ? String(x.final) : '', dono: donoOk(x.dono) || 'casal', exemplo: false };
+      return { id: id(x), diaFecha: Math.round(num(x.diaFecha, 0, 31, 0)), diaVenc: Math.round(num(x.diaVenc, 0, 31, 0)), apelido: str(x.apelido, 30) || 'Cartão', final: /^\d{4}$/.test(String(x.final || '')) ? String(x.final) : '', dono: donoOk(x.dono) || 'casal', exemplo: false };
     });
     s.faturas = arr(o.faturas).slice(0, 120).map(function (x) {
       var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, -1e9, 1e9, null);
