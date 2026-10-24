@@ -90,3 +90,9 @@ Código em `android/` (Java puro, sem Gradle nem frameworks). Um WebView em tela
 - Sem sincronização entre dispositivos além de link/JSON.
 
 byGui
+
+## Lembretes com ícone e pendências (schema v2)
+
+- Lembretes e contas aceitam o campo opcional `icone` (lista em `PS.iconesFamilia`, ex.: `casa-de-cachorro`, `escola`).
+- Lembrete com `dia: 0` é uma **pendência sem data**; as de prioridade `alta` aparecem em Hoje, em "Tarefas do dia".
+- Migrações de conteúdo únicas ficam em `PS.store` (`MIGRACOES_UNICAS`), por id fixo; os ids aplicados ficam em `localStorage` na chave `painelsala.migracoes` (separada dos dados, então importar backup ou apagar um item não a refaz).

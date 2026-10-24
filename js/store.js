@@ -4,7 +4,8 @@
   var PS = g.PS = g.PS || {};
   var U = PS.u;
   var CHAVE = 'painelsala.dados';
-  var VERSAO = 1;
+  var VERSAO = 2;
+  var CHAVE_MIG = 'painelsala.migracoes';
   var estado = null, ouvintes = [];
 
   var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '' };
@@ -18,7 +19,7 @@
   function num(v, a, b, d) { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; }
   function urlOk(u) { return typeof u === 'string' && /^https?:\/\/[^\s]+$/i.test(u) && u.length <= 600; }
   function arr(v) { return Array.isArray(v) ? v : []; }
-  function id(x) { return (x && typeof x.id === 'string' && x.id) ? x.id.slice(0, 20) : U.uid(); }
+  function id(x) { return (x && typeof x.id === 'string' && x.id) ? x.id.slice(0, 40) : U.uid(); }
 
   /* Valida e normaliza QUALQUER objeto vindo de fora (import/backup/link) */
   function sanear(o) {
@@ -44,12 +45,14 @@
     });
     s.lembretes = arr(o.lembretes).slice(0, 60).map(function (x) {
       var feitos = {}; if (x.feitos && typeof x.feitos === 'object') Object.keys(x.feitos).slice(0, 36).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k) && x.feitos[k]) feitos[k] = true; });
-      return { id: id(x), titulo: str(x.titulo, 100) || 'Lembrete', dia: Math.round(num(x.dia, 1, 31, 1)), obs: str(x.obs, 160), feitos: feitos, exemplo: !!x.exemplo };
+      /* dia 0 = pendência sem data (um "a fazer" que fica até ser marcado como feito) */
+      return { id: id(x), titulo: str(x.titulo, 100) || 'Lembrete', dia: Math.round(num(x.dia, 0, 31, 1)), obs: str(x.obs || x.nota, 160), feitos: feitos, feito: !!x.feito,
+        prio: PRIORIDADES.indexOf(x.prio) >= 0 ? x.prio : 'media', categoria: str(x.categoria, 30), icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo };
     });
     s.contas = arr(o.contas).slice(0, 80).map(function (x) {
       var pagas = {}; if (x.pagas && typeof x.pagas === 'object') Object.keys(x.pagas).slice(0, 36).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k) && x.pagas[k]) pagas[k] = true; });
       var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, 0, 1e9, null);
-      return { id: id(x), titulo: str(x.titulo, 80) || 'Conta', mensal: x.mensal !== false, dia: Math.round(num(x.dia, 1, 31, 1)), data: U.dataValida(x.data) ? x.data : '', valor: v, paga: !!x.paga, pagas: pagas, exemplo: !!x.exemplo };
+      return { id: id(x), titulo: str(x.titulo, 80) || 'Conta', mensal: x.mensal !== false, dia: Math.round(num(x.dia, 1, 31, 1)), data: U.dataValida(x.data) ? x.data : '', valor: v, paga: !!x.paga, pagas: pagas, icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo };
     });
     s.links = arr(o.links).slice(0, 40).filter(function (x) { return urlOk(x.url); }).map(function (x) {
       return { id: id(x), titulo: str(x.titulo, 40) || 'Link', url: x.url, icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'globo', exemplo: !!x.exemplo };
@@ -64,11 +67,36 @@
   }
 
   /* Migrações futuras: migracoes[N] converte do schema N para N+1 */
-  var migracoes = {};
+  var migracoes = { 1: function (o) { return o; } };   /* 1 -> 2: campos novos (icone, prio, categoria, feito) são opcionais; sanear() preenche */
   function migrar(o) {
     var v = (o && o.versao) || 1;
     while (v < VERSAO && migracoes[v]) { o = migracoes[v](o); v++; o.versao = v; }
     return o;
+  }
+
+
+  /* Migrações únicas de conteúdo: cada uma roda uma só vez por navegador (lista em localStorage 'painelsala.migracoes')
+     e nunca recria um item que o usuário apagou depois. Idempotentes (conferem o id antes de inserir). */
+  var ID_BILU = 'lembrete-bilu-casinha';
+  var MIGRACOES_UNICAS = [
+    { id: '2026-10-bilu-casinha', aplicar: function (s) {
+      if (s.lembretes.some(function (l) { return l.id === ID_BILU; })) return false;
+      s.lembretes.unshift({ id: ID_BILU, titulo: 'Comprar casinha maior para o Bilu', dia: 0, obs: 'A atual ficou pequena. Comprar uma maior.', feitos: {}, feito: false, prio: 'alta', categoria: 'Pet / Família', icone: 'casa-de-cachorro', exemplo: false });
+      return true;
+    } }
+  ];
+  function lerMigracoes() { try { var l = JSON.parse(localStorage.getItem(CHAVE_MIG) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; } }
+  function gravarMigracoes(l) { try { localStorage.setItem(CHAVE_MIG, JSON.stringify(l)); } catch (e) { /* ok */ } }
+  function marcarTodasMigracoes() { gravarMigracoes(MIGRACOES_UNICAS.map(function (m) { return m.id; })); }
+  function aplicarMigracoesUnicas(s) {
+    var feitas = lerMigracoes(), mudou = false;
+    MIGRACOES_UNICAS.forEach(function (m) {
+      if (feitas.indexOf(m.id) >= 0) return;
+      try { if (m.aplicar(s)) mudou = true; } catch (e) { console.warn('migração falhou', m.id, e); return; }
+      feitas.push(m.id);
+    });
+    gravarMigracoes(feitas);
+    return mudou;
   }
 
   function persistir() {
@@ -96,10 +124,10 @@
       var bruto = null;
       try { bruto = localStorage.getItem(CHAVE); } catch (e) { /* modo privado */ }
       if (bruto) {
-        try { estado = sanear(migrar(JSON.parse(bruto))); return Promise.resolve(estado); } catch (e) { console.warn('Dados corrompidos; recriando', e); }
+        try { estado = sanear(migrar(JSON.parse(bruto))); if (aplicarMigracoesUnicas(estado) || (estado.versao !== VERSAO)) persistir(); return Promise.resolve(estado); } catch (e) { console.warn('Dados corrompidos; recriando', e); }
       }
       return fetch(urlSemente || 'dados.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
-        .then(function (seed) { estado = semear(seed); }, function () { estado = vazio(); })
+        .then(function (seed) { estado = semear(seed); marcarTodasMigracoes(); }, function () { estado = vazio(); })
         .then(function () { persistir(); return estado; });
     },
     get: function () { return estado; },
@@ -114,7 +142,7 @@
     },
     apagarTudo: function (urlSemente) {
       return fetch(urlSemente || 'dados.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
-        .then(function (seed) { estado = semear(seed); }, function () { estado = vazio(); })
+        .then(function (seed) { estado = semear(seed); marcarTodasMigracoes(); }, function () { estado = vazio(); })
         .then(function () { persistir(); notificar(); });
     },
     limparExemplos: function () {

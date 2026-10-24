@@ -35,9 +35,18 @@
     alvo: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
     pin: '<path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
     seta: '<path d="M5 12h14M13 6l6 6-6 6"/>',
-    teclado: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>'
+    teclado: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+    'casa-de-cachorro': '<path d="M1.8 12.2L12 3.4l10.2 8.8"/><path d="M4.6 10.4V20.6h14.8V10.4"/><path d="M8.8 20.6v-6.2a3.2 3.2 0 0 1 6.4 0v6.2"/><path d="M1.8 20.6h20.4"/><path d="M10.4 8.2h3.2"/>',
+    pata: '<circle cx="6.3" cy="10.2" r="1.7"/><circle cx="9.9" cy="6.2" r="1.7"/><circle cx="14.1" cy="6.2" r="1.7"/><circle cx="17.7" cy="10.2" r="1.7"/><path d="M12 12.2c-3 0-5 2.8-5 5 0 1.8 1.5 2.4 3 1.9 1-.3 1.4-.5 2-.5s1 .2 2 .5c1.5.5 3-.1 3-1.9 0-2.2-2-5-5-5z"/>',
+    escola: '<path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 12v4.5c0 1.2 2.5 2.5 5.5 2.5s5.5-1.3 5.5-2.5V12"/><path d="M21.5 9.5V15"/>',
+    luz: '<path d="M13 3L5.5 13.5H11L10 21l8-10.5h-5.5z"/>',
+    internet: '<path d="M2.5 9.2a14 14 0 0 1 19 0"/><path d="M5.5 12.6a9.5 9.5 0 0 1 13 0"/><path d="M8.7 16a5 5 0 0 1 6.6 0"/><path d="M12 19.5h.01"/>',
+    mercado: '<path d="M3 4h2.4l2.2 11h10.2l2-8H6.6"/><path d="M9.5 20h.01M17 20h.01"/>'
   };
   PS.iconesLista = Object.keys(P);
+  /* ícones oferecidos para lembretes e contas (rótulos em PT-BR) */
+  PS.iconesFamilia = [['', 'Nenhum'], ['casa-de-cachorro', 'Casinha de cachorro'], ['pata', 'Pet (patinha)'], ['escola', 'Escola'], ['carteira', 'Conta / carteira'], ['luz', 'Luz'], ['agua', 'Água'], ['internet', 'Internet'], ['mercado', 'Mercado'], ['casa', 'Casa'], ['remedio', 'Saúde'], ['livro', 'Livro'], ['sino', 'Aviso'], ['familia', 'Família'], ['estrela', 'Estrela']];
+  PS.iconeFamiliaOk = function (n) { return PS.iconesFamilia.some(function (x) { return x[0] === n; }); };
   PS.icone = function (nome, cls) {
     var s = document.createElement('span');
     s.className = 'ic' + (cls ? ' ' + cls : '');

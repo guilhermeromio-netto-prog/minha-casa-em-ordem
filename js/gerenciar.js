@@ -167,15 +167,23 @@
     },
     familia: function () {
       var w = h('div');
-      w.appendChild(h('div', { class: 'bloco' }, h('h3', null, 'Lembretes mensais'), h('p', { class: 'nota' }, 'Ex.: comprovante da escola até o dia 10 de todo mês.'),
-        editor({ colecao: 'lembretes', rotuloAdd: 'Novo lembrete', ordenar: function (l) { return l.slice().sort(function (a, b) { return a.dia - b.dia; }); }, novo: function () { return { id: U.uid(), titulo: '', dia: 10, obs: '', feitos: {} }; },
-          campos: [{ k: 'titulo', rotulo: 'Lembrete', max: 100 }, { k: 'dia', rotulo: 'Dia do mês', tipo: 'number', min: 1, maxn: 31, set: function (i, v) { i.dia = Math.min(31, Math.max(1, Math.round(Number(v)) || 1)); } }, { k: 'obs', rotulo: 'Observação', max: 160 }] })));
+      w.appendChild(h('div', { class: 'bloco' }, h('h3', null, 'Lembretes'), h('p', { class: 'nota' }, 'Mensais (ex.: comprovante da escola até o dia 10) ou sem data (ex.: comprar algo). Pendências de prioridade alta aparecem em Hoje.'),
+        editor({ colecao: 'lembretes', rotuloAdd: 'Novo lembrete', ordenar: function (l) { return l.slice().sort(function (a, b) { return (a.dia || 0) - (b.dia || 0); }); }, novo: function () { return { id: U.uid(), titulo: '', dia: 10, obs: '', feitos: {}, feito: false, prio: 'media', categoria: '', icone: '' }; },
+          campos: [{ k: 'titulo', rotulo: 'Lembrete', max: 100 },
+            { k: 'semdata', rotulo: 'Sem data (pendência até marcar como feito)', tipo: 'check', redesenha: true, get: function (i) { return !i.dia; }, set: function (i, v) { i.dia = v ? 0 : 10; } },
+            { k: 'dia', rotulo: 'Dia do mês', tipo: 'number', min: 1, maxn: 31, mostrar: function (i) { return i.dia > 0; }, set: function (i, v) { i.dia = Math.min(31, Math.max(1, Math.round(Number(v)) || 1)); } },
+            { k: 'prio', rotulo: 'Prioridade (alta aparece em Hoje)', tipo: 'select', mostrar: function (i) { return !i.dia; }, opcoes: function () { return PRIO; } },
+            { k: 'categoria', rotulo: 'Categoria', max: 30, dica: 'Ex.: Pet / Família' },
+            { k: 'icone', rotulo: 'Ícone', tipo: 'select', opcoes: function () { return PS.iconesFamilia; } },
+            { k: 'feito', rotulo: 'Feito', tipo: 'check', mostrar: function (i) { return !i.dia; } },
+            { k: 'obs', rotulo: 'Observação', max: 160 }] })));
       var m0 = U.ym(U.hoje());
       w.appendChild(h('div', { class: 'bloco' }, h('h3', null, 'Contas'), h('p', { class: 'nota' }, 'Mensais repetem todo mês (com “paga” separado por mês). Valor é opcional.'),
         editor({ colecao: 'contas', rotuloAdd: 'Nova conta', novo: function () { return { id: U.uid(), titulo: '', mensal: true, dia: 10, data: '', valor: null, paga: false, pagas: {} }; },
           campos: [{ k: 'titulo', rotulo: 'Conta', max: 80 }, { k: 'mensal', rotulo: 'Repete todo mês', tipo: 'check', redesenha: true },
             { k: 'dia', rotulo: 'Dia do vencimento', tipo: 'number', min: 1, maxn: 31, mostrar: function (i) { return i.mensal; }, set: function (i, v) { i.dia = Math.min(31, Math.max(1, Math.round(Number(v)) || 1)); } },
             { k: 'data', rotulo: 'Vence em', tipo: 'date', mostrar: function (i) { return !i.mensal; } },
+            { k: 'icone', rotulo: 'Ícone', tipo: 'select', opcoes: function () { return PS.iconesFamilia; } },
             { k: 'valor', rotulo: 'Valor (R$) opcional', tipo: 'number', passo: '0.01', min: 0, dica: '0,00', set: function (i, v) { i.valor = v === '' ? null : Math.max(0, Number(v)); } },
             { k: 'paga', rotulo: 'Paga (este mês)', tipo: 'check', get: function (i) { return i.mensal ? !!(i.pagas && i.pagas[m0]) : !!i.paga; }, set: function (i, v) { if (i.mensal) { i.pagas = i.pagas || {}; if (v) i.pagas[m0] = true; else delete i.pagas[m0]; } else i.paga = !!v; } }] })));
       return w;

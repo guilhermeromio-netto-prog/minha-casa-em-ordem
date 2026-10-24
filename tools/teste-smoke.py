@@ -132,6 +132,54 @@ with sync_playwright() as p:
     check(not erros, 'sem erros de console no fluxo %s' % erros[:3])
     ctx.close()
 
+
+    print('== Lembrete do Bilu (casinha): perfil novo e perfil antigo ==')
+    ID = 'lembrete-bilu-casinha'
+    # perfil novo
+    ctx, pg, erros = novo_ctx(b, 1280, 720)
+    pg.goto(base + 'index.html#/familia'); pg.wait_for_selector('[data-fid="lm:%s"]' % ID); pg.wait_for_timeout(300)
+    txt = pg.inner_text('[data-fid="lm:%s"]' % ID)
+    check('Comprar casinha maior para o Bilu' in txt and 'A atual ficou pequena' in txt, 'Família mostra o lembrete do Bilu (perfil novo)')
+    check(pg.evaluate("!!document.querySelector('[data-fid=\"lm:%s\"] .ic-fam svg path')" % ID), 'Família mostra o ícone de casinha')
+    check(pg.evaluate("PS.store.get().lembretes.filter(function(l){return l.id==='%s'}).length" % ID) == 1, 'um único item do Bilu no estado')
+    pg.evaluate("document.activeElement && document.activeElement.blur()")
+    alcancou = False
+    for t_ in ['ArrowDown'] * 10 + ['ArrowUp'] * 10:
+        pg.keyboard.press(t_)
+        if pg.evaluate("document.activeElement && document.activeElement.getAttribute('data-fid')") == 'lm:' + ID: alcancou = True; break
+    check(alcancou, 'D-pad alcança o lembrete do Bilu em Família')
+    pg.keyboard.press('Enter'); pg.wait_for_timeout(200)
+    check(pg.evaluate("PS.store.get().lembretes.filter(function(l){return l.id==='%s'})[0].feito" % ID) is True, 'OK marca o lembrete como feito')
+    pg.reload(); pg.wait_for_selector('[data-fid="lm:%s"]' % ID)
+    check(pg.evaluate("document.querySelector('[data-fid=\"lm:%s\"]').getAttribute('aria-checked')" % ID) == 'true', 'feito persiste após recarregar')
+    pg.keyboard.press('Escape')
+    pg.evaluate("PS.store.alterar(function(s){ var l=s.lembretes.filter(function(x){return x.id==='%s'})[0]; l.feito=false; })" % ID)
+    pg.evaluate("location.hash='#/'"); pg.wait_for_selector('.hoje'); pg.wait_for_timeout(300)
+    check(pg.evaluate("!!document.querySelector('.hoje [data-fid=\"lp:%s\"] .ic-fam svg')" % ID), 'Hoje mostra o item do Bilu como a fazer, com ícone')
+    pg.screenshot(path=str(prints / 'tv-hoje-bilu-1280x720.png'))
+    pg.evaluate("location.hash='#/familia'"); pg.wait_for_selector('.item.dupla'); pg.wait_for_timeout(300)
+    pg.screenshot(path=str(prints / 'tv-familia-1280x720.png'))
+    # gerenciar: ícone selecionável
+    pg.evaluate("location.hash='#/gerenciar/familia'"); pg.wait_for_selector('.form-linha'); pg.wait_for_timeout(300)
+    check(pg.evaluate("Array.prototype.some.call(document.querySelectorAll('select option'), function(o){return o.value==='casa-de-cachorro'})"), 'Gerenciar oferece o ícone casa-de-cachorro')
+    ctx.close()
+    # perfil antigo (dados v1 sem o item e sem lista de migrações)
+    ctx, pg, erros = novo_ctx(b, 1280, 720)
+    pg.goto(base + 'index.html#/rotina'); pg.wait_for_selector('.habito'); pg.wait_for_timeout(300)
+    pg.evaluate("""(function(){ var s = PS.store.get(); s.versao = 1; s.lembretes = s.lembretes.filter(function(l){return l.id !== '%s'}); s.tarefas.push({id:'minha-tarefa',lista:'Casa',titulo:'Tarefa antiga do usuário',prio:'baixa',vence:'',feita:false});
+      localStorage.setItem('painelsala.dados', JSON.stringify(s)); localStorage.removeItem('painelsala.migracoes'); })()""" % ID)
+    pg.reload(); pg.wait_for_selector('.habito'); pg.wait_for_timeout(400)
+    check(pg.evaluate("PS.store.get().lembretes.filter(function(l){return l.id==='%s'}).length" % ID) == 1, 'perfil antigo: migração adiciona o lembrete do Bilu')
+    check(pg.evaluate("PS.store.get().tarefas.some(function(t){return t.id==='minha-tarefa'})"), 'perfil antigo: dados do usuário preservados')
+    pg.reload(); pg.wait_for_selector('.habito'); pg.wait_for_timeout(300)
+    check(pg.evaluate("PS.store.get().lembretes.filter(function(l){return l.id==='%s'}).length" % ID) == 1, 'migração idempotente (sem duplicar)')
+    pg.evaluate("PS.store.alterar(function(s){ s.lembretes = s.lembretes.filter(function(l){return l.id !== '%s'}); })" % ID)
+    pg.reload(); pg.wait_for_selector('.habito'); pg.wait_for_timeout(300)
+    check(pg.evaluate("PS.store.get().lembretes.filter(function(l){return l.id==='%s'}).length" % ID) == 0, 'item apagado não reaparece')
+    check(pg.evaluate("JSON.parse(localStorage.getItem('painelsala.migracoes')).indexOf('2026-10-bilu-casinha') >= 0"), 'lista de migrações aplicadas gravada')
+    check(not erros, 'sem erros de console (perfil antigo) %s' % erros[:3])
+    ctx.close()
+
     print('== Celular 360x740 (gerenciar) ==')
     ctx, pg, erros = novo_ctx(b, 360, 740)
     pg.goto(base + 'index.html#/gerenciar'); pg.wait_for_selector('.form-linha'); pg.wait_for_timeout(400)

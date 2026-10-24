@@ -47,8 +47,13 @@
       return h('a', { class: 'item', href: '#/agenda', 'data-fid': 'cp:' + c.id },
         h('span', { class: 'hora' }, c.hora || 'Dia'), h('span', { class: 't' }, c.titulo, nada()), h('span', { class: 'meta' }, c.data === hoje ? 'hoje' : U.dataCurta(c.data).split(',')[0]));
     });
-    var tars = D.tarefasDoDia(s, hoje), nT = tars.length;
-    var listaT = tars.slice(0, 3).map(function (t) {
+    var tars = D.itensDoDia(s, hoje), nT = tars.length;
+    var listaT = tars.slice(0, 3).map(function (it) {
+      if (it.tipo === 'lembrete') {
+        return h('button', { class: 'item', type: 'button', 'data-fid': 'lp:' + it.l.id, onclick: function () { S.alterar(function (st) { st.lembretes.forEach(function (x) { if (x.id === it.l.id) x.feito = true; }); }); } },
+          caixa(false), it.l.icone ? I(it.l.icone, 'ic-fam') : null, h('span', { class: 't' }, it.l.titulo, nada()));
+      }
+      var t = it.t;
       return h('button', { class: 'item', type: 'button', 'data-fid': 'tr:' + t.id, onclick: function () { S.alterar(function (st) { st.tarefas.forEach(function (x) { if (x.id === t.id) x.feita = true; }); }); } },
         caixa(false), h('span', { class: 't' }, t.titulo, nada()));
     });
@@ -61,7 +66,7 @@
     var venc = D.aVencer(s, hoje, 7), nV = venc.length;
     var listaV = venc.slice(0, 3).map(function (v) {
       return h('a', { class: 'item dupla', href: '#/familia', 'data-fid': 'vc:' + v.tipo + v.data + v.titulo },
-        I(v.tipo === 'conta' ? 'carteira' : 'sino'), h('span', { class: 't' }, v.titulo, h('small', null, seloVenc(v.estado, v.data, hoje, false, null, true), v.valor != null ? ' ' + U.valorBRL(v.valor) : '')));
+        I(v.icone || (v.tipo === 'conta' ? 'carteira' : 'sino')), h('span', { class: 't' }, v.titulo, h('small', null, seloVenc(v.estado, v.data, hoje, false, null, true), v.valor != null ? ' ' + U.valorBRL(v.valor) : '')));
     });
     var frase = D.fraseDoDia(s, hoje);
 
@@ -148,7 +153,11 @@
   /* ---------- FAMÍLIA ---------- */
   views.familia = { reativo: true, titulo: 'Família', render: function () {
     var s = S.get(), hoje = U.hoje(), m0 = U.ym(hoje);
-    var lems = s.lembretes.map(function (l) { var o = D.ocorrenciaVisivel(D.ocorrenciasLembrete(l, hoje), hoje); return { l: l, data: o.data, chave: o.chave, feito: o.feito }; }).sort(function (a, b) { return a.data < b.data ? -1 : 1; });
+    var lems = s.lembretes.map(function (l) { var o = D.ocorrenciaVisivel(D.ocorrenciasLembrete(l, hoje), hoje); return { l: l, data: o.data, chave: o.chave, feito: o.feito }; }).sort(function (a, b) {
+      if (!a.data !== !b.data) return a.data ? 1 : -1;                    /* pendências sem data primeiro */
+      if (!a.data) return a.feito !== b.feito ? (a.feito ? 1 : -1) : 0;
+      return a.data < b.data ? -1 : 1;
+    });
     var contas = [];
     s.contas.forEach(function (c) {
       var ocs = D.ocorrenciasConta(c, hoje);
@@ -158,20 +167,20 @@
     contas.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
     var li = lems.map(function (x) {
       return h('button', { class: 'item dupla' + (x.feito ? ' feito' : ''), type: 'button', role: 'checkbox', 'aria-checked': x.feito ? 'true' : 'false', 'data-fid': 'lm:' + x.l.id,
-        onclick: function () { S.alterar(function (st) { st.lembretes.forEach(function (y) { if (y.id === x.l.id) { y.feitos = y.feitos || {}; if (y.feitos[x.chave]) delete y.feitos[x.chave]; else y.feitos[x.chave] = true; } }); }); } },
-        caixa(x.feito), h('span', { class: 't' }, x.l.titulo, tagExemplo(x.l), x.l.obs ? h('small', null, x.l.obs) : null),
-        x.feito ? selo('ok', 'check', 'Feito') : seloVenc('', x.data, hoje, false));
+        onclick: function () { S.alterar(function (st) { st.lembretes.forEach(function (y) { if (y.id === x.l.id) { if (!y.dia) { y.feito = !y.feito; return; } y.feitos = y.feitos || {}; if (y.feitos[x.chave]) delete y.feitos[x.chave]; else y.feitos[x.chave] = true; } }); }); } },
+        caixa(x.feito), x.l.icone ? I(x.l.icone, 'ic-fam') : null, h('span', { class: 't' }, x.l.titulo, tagExemplo(x.l), x.l.obs ? h('small', null, x.l.obs) : null),
+        x.feito ? selo('ok', 'check', 'Feito') : (x.data ? seloVenc('', x.data, hoje, false) : selo(x.l.prio === 'alta' ? 'aviso' : 'neutro', x.l.prio === 'alta' ? 'alerta' : 'sino', x.l.prio === 'alta' ? 'Pendente · alta' : 'Pendente')));
     });
     var ci = contas.map(function (o) {
       var c = o.conta;
       return h('button', { class: 'item dupla' + (o.paga ? ' feito' : ''), type: 'button', role: 'checkbox', 'aria-checked': o.paga ? 'true' : 'false', 'data-fid': 'ct:' + c.id,
         onclick: function () { S.alterar(function (st) { st.contas.forEach(function (y) { if (y.id === c.id) { if (y.mensal) { y.pagas = y.pagas || {}; if (y.pagas[o.chave]) delete y.pagas[o.chave]; else y.pagas[o.chave] = true; } else y.paga = !y.paga; } }); }); } },
-        caixa(o.paga), h('span', { class: 't' }, c.titulo, tagExemplo(c), h('small', null, 'Vence ' + U.dataCurta(o.data) + (c.valor != null ? ' · ' + U.valorBRL(c.valor) : ''))),
+        caixa(o.paga), c.icone ? I(c.icone, 'ic-fam') : null, h('span', { class: 't' }, c.titulo, tagExemplo(c), h('small', null, 'Vence ' + U.dataCurta(o.data) + (c.valor != null ? ' · ' + U.valorBRL(c.valor) : ''))),
         seloVenc('', o.data, hoje, o.paga));
     });
     return h('div', null, h('h1', { class: 'titulo-tela' }, 'Família e contas', h('small', null, 'toque OK para marcar')),
       h('div', { class: 'duas-colunas' },
-        cartao('Lembretes do mês', 'sino', li.length ? li : h('p', { class: 'vazio' }, 'Nenhum lembrete. Cadastre em Gerenciar → Família.')),
+        cartao('Lembretes', 'sino', li.length ? li : h('p', { class: 'vazio' }, 'Nenhum lembrete. Cadastre em Gerenciar → Família.')),
         cartao('Contas a vencer', 'carteira', ci.length ? ci : h('p', { class: 'vazio' }, 'Nenhuma conta cadastrada.'))));
   } };
 

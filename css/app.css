@@ -180,3 +180,8 @@ textarea.entrada { min-height: 5rem; font-size: .6rem; font-family: ui-monospace
 .chips-habitos .item { min-height: 1.2rem; }
 .chips-habitos .caixa { width: 1.05rem; height: 1.05rem; }
 .chips-habitos .caixa .ic { width: .8rem; height: .8rem; }
+
+/* ícone de lembrete/conta (casinha, escola, luz...) */
+.item .ic.ic-fam { width: 1.15rem; height: 1.15rem; color: var(--c-magenta-claro); margin-top: 0; }
+.item.dupla .ic.ic-fam { margin-top: .15rem; }
+.selo.neutro { color: var(--c-texto-2); border-color: var(--c-linha); }
