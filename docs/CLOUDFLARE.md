@@ -11,7 +11,7 @@ Um único Worker, `minha-casa-em-ordem` (`portal-worker/worker.js`), fica **na f
 Por isso **não há projeto Pages separado e público** na Cloudflare: o Pages não permite barrar a entrega dos arquivos sem um Worker na frente.
 
 ## Contas
-Exatamente duas, ambas **admin** (mesmas permissões): Guilherme (`guilhermeromionetto@gmail.com`) e Esposa (`jtorrico10@gmail.com`). Sem cadastro público (não existe rota para criar conta).
+Exatamente duas, ambas **admin** (mesmas permissões): Guilherme (`guilhermeromionetto@gmail.com`) e Esposa (`jorrico10@gmail.com`). Sem cadastro público (não existe rota para criar conta).
 - **Primeiro acesso:** link de **uso único** (válido 14 dias na criação inicial; 24 h quando gerado de novo). O link é lido uma vez, guarda-se só o **hash**, e você escolhe a senha na hora (mín. 12 caracteres; recusa senha igual ao e-mail e as muito comuns). Os links iniciais ficam num arquivo **fora do repositório** (`/workspace/keys/links-primeiro-acesso.txt` na box de trabalho).
 - **Conta** (`/conta`, também link no rodapé do app): lista os acessos, **gera novo link** para o outro admin (apaga a senha e **encerra as sessões** dele), troca a própria senha (encerra as outras sessões), sair deste aparelho.
 - **Se os dois ficarem sem acesso** (link vencido, senha perdida pelos dois): é preciso gerar um novo link direto no banco (Cloudflare → D1 `minha-casa-acesso`: `UPDATE usuarios SET link_hash=<sha256 do token novo>, link_exp=<agora+24h>, senha=NULL WHERE email=...`).
