@@ -41,7 +41,22 @@
     escola: '<path d="M2.5 9.5L12 5l9.5 4.5L12 14z"/><path d="M6.5 12v4.5c0 1.2 2.5 2.5 5.5 2.5s5.5-1.3 5.5-2.5V12"/><path d="M21.5 9.5V15"/>',
     luz: '<path d="M13 3L5.5 13.5H11L10 21l8-10.5h-5.5z"/>',
     internet: '<path d="M2.5 9.2a14 14 0 0 1 19 0"/><path d="M5.5 12.6a9.5 9.5 0 0 1 13 0"/><path d="M8.7 16a5 5 0 0 1 6.6 0"/><path d="M12 19.5h.01"/>',
-    mercado: '<path d="M3 4h2.4l2.2 11h10.2l2-8H6.6"/><path d="M9.5 20h.01M17 20h.01"/>'
+    mercado: '<path d="M3 4h2.4l2.2 11h10.2l2-8H6.6"/><path d="M9.5 20h.01M17 20h.01"/>',
+    cartao: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6 15h4"/>',
+    grafico: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    subiu: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+    caiu: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    igual: '<path d="M5 9h14M5 15h14"/>',
+    desfazer: '<path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12"/>',
+    baixar: '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>',
+    enviar: '<path d="M12 16V5M7 9l5-5 5 5M5 20h14"/>',
+    radio: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l10-5M8 14h.01M8 17h5M16 14h2"/>',
+    volume: '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>',
+    pausa: '<path d="M8 5v14M16 5v14"/>',
+    cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    arvore: '<path d="M12 21v-6"/><path d="M12 15a5 5 0 0 0 4-8 4 4 0 0 0-8 0 5 5 0 0 0 4 8z"/>',
+    guarda: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+    busca: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'
   };
   PS.iconesLista = Object.keys(P);
   /* ícones oferecidos para lembretes e contas (rótulos em PT-BR) */

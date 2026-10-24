@@ -7,7 +7,7 @@
   'use strict';
   /* coleções-lista (itens com id). Nomes: 2–16 letras minúsculas (exigência do servidor). */
   var COLECOES = ['habitos', 'tarefas', 'compromissos', 'lembretes', 'contas', 'links', 'foco', 'cartoes', 'faturas', 'lancs', 'regras', 'radios', 'passeios', 'programa'];
-  var CONFIG_LOCAL = ['fonte', 'contraste', 'filtroDono'];     /* preferências de TELA: cada aparelho tem a sua */
+  var CONFIG_LOCAL = ['fonte', 'contraste', 'filtroDono', 'notificar'];     /* preferências de TELA: cada aparelho tem a sua */
   var DIAS_TOMBA = 130;
 
   function estavel(v) {

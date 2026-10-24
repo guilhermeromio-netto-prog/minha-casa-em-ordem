@@ -53,7 +53,7 @@
         h('span', { class: 'hora' }, c.hora || 'Dia'), h('span', { class: 't' }, c.titulo, nada()), h('span', { class: 'meta' }, c.data === hoje ? 'hoje' : U.dataCurta(c.data).split(',')[0]));
     });
     var tars = D.itensDoDia(s, hoje), nT = tars.length;
-    var listaT = tars.slice(0, 3).map(function (it) {
+    var listaT = tars.slice(0, 2).map(function (it) {
       if (it.tipo === 'lembrete') {
         return h('button', { class: 'item', type: 'button', 'data-fid': 'lp:' + it.l.id, onclick: function () { S.alterar(function (st) { st.lembretes.forEach(function (x) { if (x.id === it.l.id) x.feito = true; }); }); } },
           caixa(false), it.l.icone ? I(it.l.icone, 'ic-fam') : null, h('span', { class: 't' }, it.l.titulo, nada()));
@@ -68,27 +68,21 @@
       var on = S.habitoFeito(x.id, hoje);
       return h('button', { class: 'item' + (on ? ' feito' : ''), type: 'button', 'data-fid': 'hb:' + x.id, 'aria-pressed': on ? 'true' : 'false', onclick: function () { S.alternarHabito(x.id, hoje); } }, caixa(on), h('span', { class: 't' }, x.nome));
     });
-    var venc = D.aVencer(s, hoje, 7), nV = venc.length;
-    var listaV = venc.slice(0, 3).map(function (v) {
-      return h('a', { class: 'item dupla', href: '#/familia', 'data-fid': 'vc:' + v.tipo + v.data + v.titulo },
-        I(v.icone || (v.tipo === 'conta' ? 'carteira' : 'sino')), h('span', { class: 't' }, v.titulo, h('small', null, seloVenc(v.estado, v.data, hoje, false, null, true), v.valor != null ? ' ' + U.valorBRL(v.valor) : '')));
-    });
     var frase = D.fraseDoDia(s, hoje);
 
-    return h('div', { class: 'hoje' },
+    return h('div', { class: 'hoje-wrap' }, PS.finUI.atencao(s, hoje, 2), h('div', { class: 'hoje' },
       h('div', { class: 'coluna' },
         h('section', { class: 'cartao relogio-cartao' }, relogio(), h('div', { class: 'data-grande' }, cap(U.dataLonga(hoje))), h('div', { class: 'saudacao' }, D.saudacao(ag.h) + (nome ? ', ' + nome : '') + ' · ' + s.config.cidade), chipSync()),
-        cartao('Clima', 'sol', boxClima),
-        frase ? cartao('Foco do dia', 'alvo', h('p', { class: 'foco' }, frase)) : null),
+        cartao('Clima', 'sol', boxClima)),
       h('div', { class: 'coluna' },
         cartao('Compromissos', 'calendario', listaComp.length ? listaComp : h('p', { class: 'vazio' }, 'Nada marcado nos próximos 7 dias.'), nComp > 3 ? '+' + (nComp - 3) : null),
-        cartao('Tarefas do dia', 'lista', listaT.length ? listaT : h('p', { class: 'vazio' }, 'Nenhuma tarefa para hoje. Tudo em dia!'), nT > 3 ? '+' + (nT - 3) : null)),
+        cartao('Tarefas do dia', 'lista', listaT.length ? listaT : h('p', { class: 'vazio' }, 'Nenhuma tarefa para hoje. Tudo em dia!'), nT > 2 ? '+' + (nT - 2) : null)),
       h('div', { class: 'coluna' },
         cartao('Hábitos de hoje', 'chama', totH ? [
           h('div', { class: 'progresso-txt' }, h('strong', null, feitosHoje + '/' + totH), h('span', null, pct + '% do dia')),
           h('div', { class: 'barra', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: 'width:' + pct + '%' })),
           h('div', { class: 'chips-habitos' }, chips)] : h('p', { class: 'vazio' }, 'Cadastre hábitos em Gerenciar.')),
-        cartao('A vencer · 7 dias', 'carteira', listaV.length ? listaV : h('p', { class: 'vazio' }, 'Nenhuma conta ou lembrete nos próximos 7 dias.'), nV > 3 ? '+' + (nV - 3) : null)));
+        frase ? cartao('Foco do dia', 'alvo', h('p', { class: 'foco' }, frase)) : null)));
   } };
 
   /* ---------- ROTINA ---------- */
@@ -163,30 +157,16 @@
       if (!a.data) return a.feito !== b.feito ? (a.feito ? 1 : -1) : 0;
       return a.data < b.data ? -1 : 1;
     });
-    var contas = [];
-    s.contas.forEach(function (c) {
-      var ocs = D.ocorrenciasConta(c, hoje);
-      if (c.mensal) contas.push(D.ocorrenciaVisivel(ocs, hoje));
-      else ocs.forEach(function (o) { if (U.difDias(o.data, hoje) >= -30 && U.difDias(o.data, hoje) <= 60) contas.push(o); });
-    });
-    contas.sort(function (a, b) { return a.data < b.data ? -1 : 1; });
     var li = lems.map(function (x) {
       return h('button', { class: 'item dupla' + (x.feito ? ' feito' : ''), type: 'button', role: 'checkbox', 'aria-checked': x.feito ? 'true' : 'false', 'data-fid': 'lm:' + x.l.id,
         onclick: function () { S.alterar(function (st) { st.lembretes.forEach(function (y) { if (y.id === x.l.id) { if (!y.dia) { y.feito = !y.feito; return; } y.feitos = y.feitos || {}; if (y.feitos[x.chave]) delete y.feitos[x.chave]; else y.feitos[x.chave] = true; } }); }); } },
         caixa(x.feito), x.l.icone ? I(x.l.icone, 'ic-fam') : null, h('span', { class: 't' }, x.l.titulo, tagExemplo(x.l), x.l.obs ? h('small', null, x.l.obs) : null),
         x.feito ? selo('ok', 'check', 'Feito') : (x.data ? seloVenc('', x.data, hoje, false) : selo(x.l.prio === 'alta' ? 'aviso' : 'neutro', x.l.prio === 'alta' ? 'alerta' : 'sino', x.l.prio === 'alta' ? 'Pendente · alta' : 'Pendente')));
     });
-    var ci = contas.map(function (o) {
-      var c = o.conta;
-      return h('button', { class: 'item dupla' + (o.paga ? ' feito' : ''), type: 'button', role: 'checkbox', 'aria-checked': o.paga ? 'true' : 'false', 'data-fid': 'ct:' + c.id,
-        onclick: function () { S.alterar(function (st) { st.contas.forEach(function (y) { if (y.id === c.id) { if (y.mensal) { y.pagas = y.pagas || {}; if (y.pagas[o.chave]) delete y.pagas[o.chave]; else y.pagas[o.chave] = true; } else y.paga = !y.paga; } }); }); } },
-        caixa(o.paga), c.icone ? I(c.icone, 'ic-fam') : null, h('span', { class: 't' }, c.titulo, tagExemplo(c), h('small', null, 'Vence ' + U.dataCurta(o.data) + (c.valor != null ? ' · ' + U.valorBRL(c.valor) : ''))),
-        seloVenc('', o.data, hoje, o.paga));
-    });
     return h('div', null, h('h1', { class: 'titulo-tela' }, 'Família e contas', h('small', null, 'toque OK para marcar')),
       h('div', { class: 'duas-colunas' },
         cartao('Lembretes', 'sino', li.length ? li : h('p', { class: 'vazio' }, 'Nenhum lembrete. Cadastre em Gerenciar → Família.')),
-        cartao('Contas a vencer', 'carteira', ci.length ? ci : h('p', { class: 'vazio' }, 'Nenhuma conta cadastrada.'))));
+        PS.finUI.painel(s, hoje)));
   } };
 
   /* ---------- RELAXAR ---------- */

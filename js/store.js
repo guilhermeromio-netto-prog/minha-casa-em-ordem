@@ -4,7 +4,7 @@
   var PS = g.PS = g.PS || {};
   var U = PS.u;
   var CHAVE = 'painelsala.dados';
-  var VERSAO = 3;
+  var VERSAO = 4;
   var CHAVE_MIG = 'painelsala.migracoes';
   var CHAVE_SYNC = 'painelsala.sync';
   var DONOS = ['gui', 'esposa', 'casal'];
@@ -13,7 +13,7 @@
   var hooksGravar = [], semHook = 0;
   var estado = null, ouvintes = [];
 
-  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos' };
+  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos', antecedencia: [3, 1, 0], notificar: false };
   var PRIORIDADES = ['alta', 'media', 'baixa'];
 
   function vazio() {
@@ -26,6 +26,12 @@
   function arr(v) { return Array.isArray(v) ? v : []; }
   function donoOk(v) { return DONOS.indexOf(v) >= 0 ? v : ''; }
   function iso(v) { return typeof v === 'string' && U.dataValida(v) ? v : ''; }
+  function antecOk(v) {
+    var l = (Array.isArray(v) ? v : PADRAO_CONFIG.antecedencia).map(function (n) { return Math.round(Number(n)); }).filter(function (n) { return isFinite(n) && n >= 0 && n <= 14; });
+    var u = []; l.forEach(function (n) { if (u.indexOf(n) < 0) u.push(n); });
+    u.sort(function (a, b) { return b - a; }); u = u.slice(0, 5);
+    return u.length ? u : PADRAO_CONFIG.antecedencia.slice();
+  }
   function id(x) { return (x && typeof x.id === 'string' && x.id) ? x.id.slice(0, 40) : U.uid(); }
 
   /* Valida e normaliza QUALQUER objeto vindo de fora (import/backup/link) */
@@ -38,7 +44,8 @@
       lat: num(c.lat, -90, 90, PADRAO_CONFIG.lat), lon: num(c.lon, -180, 180, PADRAO_CONFIG.lon),
       fonte: Math.round(num(c.fonte, 1, 3, 1)), contraste: !!c.contraste, noiteAuto: c.noiteAuto !== false,
       escurecerMin: Math.round(num(c.escurecerMin, 0, 120, 10)), nome: str(c.nome, 40),
-      esposa: str(c.esposa, 20) || PADRAO_CONFIG.esposa, filtroDono: ['todos', 'meus', 'dela', 'nos'].indexOf(c.filtroDono) >= 0 ? c.filtroDono : 'todos'
+      esposa: str(c.esposa, 20) || PADRAO_CONFIG.esposa, filtroDono: ['todos', 'meus', 'dela', 'nos'].indexOf(c.filtroDono) >= 0 ? c.filtroDono : 'todos',
+      antecedencia: antecOk(c.antecedencia), notificar: c.notificar === true
     };
     s.habitos = arr(o.habitos).slice(0, 30).map(function (x) {
       return { id: id(x), nome: str(x.nome, 40) || 'Hábito', icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'check', exemplo: !!x.exemplo };
@@ -58,9 +65,12 @@
         prio: PRIORIDADES.indexOf(x.prio) >= 0 ? x.prio : 'media', categoria: str(x.categoria, 30), icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo };
     });
     s.contas = arr(o.contas).slice(0, 80).map(function (x) {
-      var pagas = {}; if (x.pagas && typeof x.pagas === 'object') Object.keys(x.pagas).slice(0, 36).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k) && x.pagas[k]) pagas[k] = true; });
+      /* pagas[mês] = true (pago, sem data) ou 'AAAA-MM-DD' (data do pagamento, manual) */
+      var pagas = {}; if (x.pagas && typeof x.pagas === 'object') Object.keys(x.pagas).slice(0, 48).forEach(function (k) { if (/^\d{4}-\d{2}$/.test(k) && x.pagas[k]) pagas[k] = (typeof x.pagas[k] === 'string' && U.dataValida(x.pagas[k])) ? x.pagas[k] : true; });
+      var valores = {}; if (x.valores && typeof x.valores === 'object') Object.keys(x.valores).slice(0, 48).forEach(function (k) { var n = Number(x.valores[k]); if (/^\d{4}-\d{2}$/.test(k) && isFinite(n)) valores[k] = Math.min(1e9, Math.max(0, n)); });
       var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, 0, 1e9, null);
-      return { id: id(x), titulo: str(x.titulo, 80) || 'Conta', mensal: x.mensal !== false, dia: Math.round(num(x.dia, 1, 31, 1)), data: U.dataValida(x.data) ? x.data : '', valor: v, paga: !!x.paga, pagas: pagas, icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo };
+      return { id: id(x), titulo: str(x.titulo, 80) || 'Conta', mensal: x.mensal !== false, dia: Math.round(num(x.dia, 1, 31, 1)), data: U.dataValida(x.data) ? x.data : '', valor: v, paga: !!x.paga, pagaEm: iso(x.pagaEm), pagas: pagas, valores: valores,
+        desde: /^\d{4}-\d{2}$/.test(String(x.desde || '')) ? x.desde : '', cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'casa', dono: donoOk(x.dono), icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo };
     });
     s.links = arr(o.links).slice(0, 40).filter(function (x) { return urlOk(x.url); }).map(function (x) {
       return { id: id(x), titulo: str(x.titulo, 40) || 'Link', url: x.url, icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'globo', exemplo: !!x.exemplo };
@@ -72,7 +82,7 @@
     s.faturas = arr(o.faturas).slice(0, 120).map(function (x) {
       var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, -1e9, 1e9, null);
       return { id: id(x), cartao: str(x.cartao, 40), mes: /^\d{4}-\d{2}$/.test(String(x.mes || '')) ? x.mes : '', valor: v, fechamento: iso(x.fechamento), vencimento: iso(x.vencimento),
-        status: STATUS_FAT.indexOf(x.status) >= 0 ? x.status : 'aberta', origem: x.origem === 'pdf' ? 'pdf' : 'manual', periodo: str(x.periodo, 40), parcelas: str(x.parcelas, 160), dono: donoOk(x.dono), teste: !!x.teste, exemplo: false };
+        status: STATUS_FAT.indexOf(x.status) >= 0 ? x.status : 'aberta', origem: x.origem === 'pdf' ? 'pdf' : 'manual', periodo: str(x.periodo, 40), parcelas: str(x.parcelas, 160), pagaEm: iso(x.pagaEm), dono: donoOk(x.dono), teste: !!x.teste, exemplo: false };
     });
     s.lancs = arr(o.lancs).slice(0, 4000).map(function (x) {
       return { id: id(x), fatura: str(x.fatura, 40), data: iso(x.data), desc: str(x.desc, 80) || 'Lançamento', valor: num(x.valor, -1e9, 1e9, 0), pa: Math.round(num(x.pa, 0, 99, 0)), pt: Math.round(num(x.pt, 0, 99, 0)),
@@ -99,7 +109,7 @@
   }
 
   /* Migrações futuras: migracoes[N] converte do schema N para N+1 */
-  var migracoes = { 1: function (o) { return o; }, 2: function (o) { return o; } };   /* campos novos são opcionais; sanear() preenche */
+  var migracoes = { 1: function (o) { return o; }, 2: function (o) { return o; }, 3: function (o) { return o; } };   /* campos novos são opcionais; sanear() preenche */
   function migrar(o) {
     var v = (o && o.versao) || 1;
     while (v < VERSAO && migracoes[v]) { o = migracoes[v](o); v++; o.versao = v; }

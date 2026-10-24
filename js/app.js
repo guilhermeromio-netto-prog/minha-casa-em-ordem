@@ -40,6 +40,7 @@
     U.limpar(main); main.appendChild(no);
     document.title = (v.titulo && viewAtual !== 'hoje' ? v.titulo + ' · ' : '') + 'Painel da Sala';
     tick();
+    if (PS.lembretes) PS.lembretes.atualizarBadge();
     if (manterFoco) {
       main.scrollTop = rolagem;
       if (fid) { var alvo = main.querySelector('[data-fid="' + fid.replace(/"/g, '\\"') + '"]'); if (alvo) { PS.nav.focar(alvo); return; } }
@@ -91,6 +92,7 @@
       setTimeout(function () { if (sp) { sp.classList.add('fim'); setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 600); } }, 700);
       registrarSW();
       if (PS.sync) PS.sync.iniciar();
+      if (PS.lembretes) PS.lembretes.iniciar();
       if (PS.bloqueio) PS.bloqueio.aoAbrir();
     }).catch(function (e) { console.error(e); document.getElementById('app').textContent = 'Erro ao iniciar: ' + e.message; });
   }

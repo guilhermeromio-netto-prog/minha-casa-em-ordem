@@ -179,13 +179,15 @@
             { k: 'obs', rotulo: 'Observação', max: 160 }] })));
       var m0 = U.ym(U.hoje());
       w.appendChild(h('div', { class: 'bloco' }, h('h3', null, 'Contas'), h('p', { class: 'nota' }, 'Mensais repetem todo mês (com “paga” separado por mês). Valor é opcional.'),
-        editor({ colecao: 'contas', rotuloAdd: 'Nova conta', novo: function () { return { id: U.uid(), titulo: '', mensal: true, dia: 10, data: '', valor: null, paga: false, pagas: {} }; },
+        editor({ colecao: 'contas', rotuloAdd: 'Nova conta', novo: function () { return { id: U.uid(), titulo: '', mensal: true, dia: 10, data: '', valor: null, paga: false, pagas: {}, valores: {}, desde: U.ym(U.hoje()), cat: 'casa', dono: '' }; },
           campos: [{ k: 'titulo', rotulo: 'Conta', max: 80 }, { k: 'mensal', rotulo: 'Repete todo mês', tipo: 'check', redesenha: true },
             { k: 'dia', rotulo: 'Dia do vencimento', tipo: 'number', min: 1, maxn: 31, mostrar: function (i) { return i.mensal; }, set: function (i, v) { i.dia = Math.min(31, Math.max(1, Math.round(Number(v)) || 1)); } },
             { k: 'data', rotulo: 'Vence em', tipo: 'date', mostrar: function (i) { return !i.mensal; } },
             { k: 'icone', rotulo: 'Ícone', tipo: 'select', opcoes: function () { return PS.iconesFamilia; } },
             { k: 'valor', rotulo: 'Valor (R$) opcional', tipo: 'number', passo: '0.01', min: 0, dica: '0,00', set: function (i, v) { i.valor = v === '' ? null : Math.max(0, Number(v)); } },
-            { k: 'paga', rotulo: 'Paga (este mês)', tipo: 'check', get: function (i) { return i.mensal ? !!(i.pagas && i.pagas[m0]) : !!i.paga; }, set: function (i, v) { if (i.mensal) { i.pagas = i.pagas || {}; if (v) i.pagas[m0] = true; else delete i.pagas[m0]; } else i.paga = !!v; } }] })));
+            { k: 'cat', rotulo: 'Categoria (histórico)', tipo: 'select', opcoes: function () { return S.CATS.map(function (c) { return [c, PS.nomeCat ? PS.nomeCat(c) : c]; }); } },
+            { k: 'dono', rotulo: 'De quem', tipo: 'select', opcoes: function () { return [['', 'Casal / sem dono'], ['gui', 'Gui'], ['esposa', S.get().config.esposa], ['casal', 'Casal']]; } },
+            { k: 'paga', rotulo: 'Paga (este mês) — manual', tipo: 'check', get: function (i) { return i.mensal ? !!(i.pagas && i.pagas[m0]) : !!i.paga; }, set: function (i, v) { if (v) PS.fin.marcarPaga({ contas: [i] }, 'conta', i.id, i.mensal ? m0 : 'avulsa', U.hoje()); else PS.fin.desfazerPaga({ contas: [i] }, 'conta', i.id, i.mensal ? m0 : 'avulsa'); } }] })));
       return w;
     },
     links: function () {
