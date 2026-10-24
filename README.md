@@ -85,7 +85,7 @@ Código em `android/` (Java puro, sem Gradle nem frameworks). Um WebView em tela
 
 ## Limitações conhecidas
 
-- Não foi testado em um Mibo X real por quem construiu; códigos de tecla do controle podem variar (use `#/teclas`).
+- O APK foi verificado (assinatura, manifesto, ícones) mas **não rodou num aparelho real nem num emulador com a página carregada** (o emulador do ambiente de build é lento demais, sem KVM); teste no Mibo X e reporte. Também não foi testado em um Mibo X real por quem construiu; códigos de tecla do controle podem variar (use `#/teclas`).
 - Clima precisa de internet (Open-Meteo); offline mostra o último valor em cache.
 - Sem sincronização entre dispositivos além de link/JSON.
 
