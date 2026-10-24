@@ -1,4 +1,4 @@
-/* painel-sala-sync — Worker de sincronização do Painel da Sala (módulo ES, arquivo único, sem dependências).
+/* painel-sala-sync — Worker de sincronização do Minha Casa em Ordem (módulo ES, arquivo único, sem dependências).
  *
  * Privacidade: o servidor guarda SÓ texto cifrado no navegador (AES-GCM). Ele enxerga apenas: id opaco (HMAC),
  * nome da coleção, carimbo de tempo (t), flag de apagado, seq e tamanhos. Nunca recebe a "senha da família".
@@ -8,6 +8,8 @@
  * Nenhum PIN, token, senha ou id de aparelho é escrito em log. */
 
 var ORIGEM_PADRAO = 'https://guilhermeromio-netto-prog.github.io';
+/* Origens do app: GitHub Pages (cópia pública, sem login) e o portal na Cloudflare (com login). ORIGEM_PERMITIDA, se existir, pode ter várias separadas por vírgula. */
+var ORIGENS_PADRAO = [ORIGEM_PADRAO, 'https://minha-casa-em-ordem.guilhermeromionetto.workers.dev'];
 var MAX_CORPO = 512 * 1024;          /* 512 KB */
 var MAX_MUDANCAS = 300;              /* itens por PUT */
 var MAX_ITENS_FAMILIA = 6000;
@@ -363,9 +365,9 @@ var ROTAS = {
 
 export default {
   async fetch(request, env) {
-    var permitida = env.ORIGEM_PERMITIDA || ORIGEM_PADRAO;
+    var permitidas = env.ORIGEM_PERMITIDA ? String(env.ORIGEM_PERMITIDA).split(',').map(function (x) { return x.trim(); }).filter(Boolean) : ORIGENS_PADRAO;
     var origem = request.headers.get('origin');
-    var ok = !origem || origem === permitida;
+    var ok = !origem || permitidas.indexOf(origem) >= 0;
     try {
       if (origem && !ok) return new Response(JSON.stringify({ erro: 'origem', mensagem: 'Origem não permitida.' }), { status: 403, headers: cabecalhos(null) });
       var cors = origem ? origem : null;

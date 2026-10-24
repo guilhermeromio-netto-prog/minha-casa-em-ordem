@@ -5,3 +5,7 @@ local.properties
 android/build/
 .DS_Store
 *.idsig
+dist/
+node_modules/
+.wrangler/
+keys/
