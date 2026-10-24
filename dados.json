@@ -1,0 +1,51 @@
+{
+  "app": "painel-sala",
+  "versao": 1,
+  "_comentario": "Dados de EXEMPLO. Tudo aqui aparece marcado como 'exemplo' no painel e pode ser editado ou removido em Gerenciar. 'dias' = dias a partir de hoje (o app converte em datas reais no primeiro uso).",
+  "config": { "cidade": "Osasco, SP", "lat": -23.5325, "lon": -46.7917, "fonte": 1, "contraste": false, "noiteAuto": true, "escurecerMin": 10, "nome": "" },
+  "habitos": [
+    { "nome": "Beber água", "icone": "agua", "exemplo": true },
+    { "nome": "Treino", "icone": "treino", "exemplo": true },
+    { "nome": "Remédio", "icone": "remedio", "exemplo": true },
+    { "nome": "Leitura", "icone": "livro", "exemplo": true }
+  ],
+  "listas": ["Casa", "Trabalho", "Maria Alice"],
+  "tarefas": [
+    { "lista": "Casa", "titulo": "Separar a roupa para lavar", "prio": "media", "dias": 0, "exemplo": true },
+    { "lista": "Casa", "titulo": "Revisar a lista do mercado", "prio": "baixa", "dias": 2, "exemplo": true },
+    { "lista": "Trabalho", "titulo": "Responder e-mails pendentes", "prio": "alta", "dias": 0, "exemplo": true },
+    { "lista": "Trabalho", "titulo": "Preparar pauta da semana", "prio": "media", "dias": 3, "exemplo": true },
+    { "lista": "Maria Alice", "titulo": "Conferir o material da escola", "prio": "alta", "dias": 1, "exemplo": true },
+    { "lista": "Maria Alice", "titulo": "Separar o uniforme de amanhã", "prio": "media", "dias": 0, "exemplo": true }
+  ],
+  "compromissos": [
+    { "titulo": "Reunião de alinhamento", "dias": 0, "hora": "15:00", "local": "Online", "exemplo": true },
+    { "titulo": "Treino", "dias": 1, "hora": "07:00", "local": "Academia", "exemplo": true },
+    { "titulo": "Consulta (exemplo)", "dias": 3, "hora": "10:30", "local": "Clínica", "exemplo": true },
+    { "titulo": "Passeio em família", "dias": 5, "hora": "", "local": "", "exemplo": true }
+  ],
+  "lembretes": [
+    { "titulo": "Comprovante da escola", "dia": 10, "obs": "Maria Alice: enviar o comprovante até o dia 10 (exemplo)", "exemplo": true },
+    { "titulo": "Reunião de pais", "dia": 20, "obs": "Conferir o calendário da escola (exemplo)", "exemplo": true }
+  ],
+  "contas": [
+    { "titulo": "Conta de luz", "mensal": true, "diasAteVencer": 3, "valor": null, "exemplo": true },
+    { "titulo": "Internet", "mensal": true, "diasAteVencer": 6, "valor": null, "exemplo": true },
+    { "titulo": "Mensalidade da escola", "mensal": true, "diasAteVencer": 12, "valor": null, "exemplo": true }
+  ],
+  "links": [
+    { "titulo": "YouTube TV", "url": "https://www.youtube.com/tv", "icone": "play" },
+    { "titulo": "YouTube", "url": "https://www.youtube.com", "icone": "play" },
+    { "titulo": "Netflix", "url": "https://www.netflix.com", "icone": "filme", "exemplo": true },
+    { "titulo": "Prime Video", "url": "https://www.primevideo.com", "icone": "filme", "exemplo": true },
+    { "titulo": "Globoplay", "url": "https://globoplay.globo.com", "icone": "tv", "exemplo": true },
+    { "titulo": "Jogos na nuvem (exemplo)", "url": "https://www.xbox.com/play", "icone": "jogo", "exemplo": true }
+  ],
+  "foco": [
+    { "texto": "Um passo de cada vez.", "exemplo": true },
+    { "texto": "O simples, feito todo dia, vence o perfeito que nunca começa.", "exemplo": true },
+    { "texto": "Hoje: o que é importante vem antes do que é urgente.", "exemplo": true },
+    { "texto": "Cuidar de si também é produtividade.", "exemplo": true },
+    { "texto": "Descanse a tela, olhe para quem está na sala.", "exemplo": true }
+  ]
+}

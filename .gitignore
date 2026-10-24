@@ -1,0 +1,6 @@
+*.jks
+*.keystore
+*.p12
+local.properties
+android/build/
+.DS_Store

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Painel da Sala</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Painel da Sala: rotina, tarefas, agenda e contas na TV, com controle remoto. byGui.">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/tokens.css?v=66dac39">
+<link rel="stylesheet" href="css/base.css?v=66dac39">
+<link rel="stylesheet" href="css/app.css?v=66dac39">
+</head>
+<body>
+<div id="splash" role="status" aria-label="Carregando"><svg viewBox="0 0 96 96" aria-hidden="true" focusable="false"><rect x="7" y="12" width="82" height="58" rx="13" fill="#0A0A0A" stroke="#FFFFFF" stroke-width="6"/><path d="M48 70v14M34 84h28" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/><circle cx="48" cy="41" r="17" fill="none" stroke="#E20074" stroke-width="6"/><path d="M40 41.5l6 6 11-12" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><p>Painel da <b>Sala</b></p></div>
+<div id="shell">
+  <header class="topo">
+    <a class="marca" href="#/" aria-label="Painel da Sala — início"><svg viewBox="0 0 96 96" aria-hidden="true" focusable="false"><rect x="7" y="12" width="82" height="58" rx="13" fill="#0A0A0A" stroke="#FFFFFF" stroke-width="6"/><path d="M48 70v14M34 84h28" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/><circle cx="48" cy="41" r="17" fill="none" stroke="#E20074" stroke-width="6"/><path d="M40 41.5l6 6 11-12" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Painel da <b>Sala</b></span></a>
+    <nav class="menu" aria-label="Telas">
+      <a href="#/">Hoje</a><a href="#/rotina">Rotina</a><a href="#/tarefas">Tarefas</a><a href="#/agenda">Agenda</a><a href="#/familia">Família</a><a href="#/relaxar">Relaxar</a><a href="#/gerenciar">Gerenciar</a>
+    </nav>
+  </header>
+  <main id="app" aria-live="polite"><noscript>Ative o JavaScript para usar o Painel da Sala.</noscript></main>
+  <footer class="rodape">
+    <span class="assinatura">Painel da Sala · <b>byGui</b></span>
+    <span><a href="#/instalar" class="btn-rodape">Instalar</a> · <a href="#/teclas" class="btn-rodape">Teclas</a> · setas: mover · OK: marcar · Voltar: início</span>
+  </footer>
+</div>
+<script src="js/util.js?v=66dac39"></script>
+<script src="js/icons.js?v=66dac39"></script>
+<script src="js/store.js?v=66dac39"></script>
+<script src="js/dominio.js?v=66dac39"></script>
+<script src="js/clima.js?v=66dac39"></script>
+<script src="js/ics.js?v=66dac39"></script>
+<script src="js/nav.js?v=66dac39"></script>
+<script src="js/energia.js?v=66dac39"></script>
+<script src="js/telas.js?v=66dac39"></script>
+<script src="js/gerenciar.js?v=66dac39"></script>
+<script src="js/app.js?v=66dac39"></script>
+</body>
+</html>

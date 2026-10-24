@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 96" role="img" aria-label="Painel da Sala">
+  <title>Painel da Sala</title>
+  <g>
+    <rect x="7" y="12" width="82" height="58" rx="13" fill="#0A0A0A" stroke="#FFFFFF" stroke-width="6"/>
+    <path d="M48 70v14M34 84h28" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="48" cy="41" r="17" fill="none" stroke="#E20074" stroke-width="6"/>
+    <path d="M40 41.5l6 6 11-12" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="116" y="62" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-size="52" font-weight="800" letter-spacing="-1" fill="#FFFFFF">Painel da <tspan fill="#E20074">Sala</tspan></text>
+</svg>
