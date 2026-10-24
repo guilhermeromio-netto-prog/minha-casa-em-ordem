@@ -80,6 +80,7 @@
 
   function iniciar() {
     S.iniciar('dados.json').then(function () {
+      S.fixasAutoUmaVez(PS.u.hoje());
       PS.aplicarConfig();
       if (PS.sync) PS.sync.aoMudar(function () { if (viewAtual === 'hoje') { var chip = document.querySelector('.sync-chip'); if (chip && PS.atualizarChipSync) PS.atualizarChipSync(chip); } });
       S.aoMudar(function () { var v = PS.views[viewAtual]; if (v && v.reativo) desenhar(true); });

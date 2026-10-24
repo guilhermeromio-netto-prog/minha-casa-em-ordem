@@ -371,3 +371,16 @@ textarea.entrada { min-height: 5rem; font-size: .6rem; font-family: ui-monospace
 @media (prefers-reduced-motion: reduce) {
   .rosca-svg .fatia, .barra-anim, .anel-prog, .pa-pago, .top-barra i, .prog i, .lanc, .cartoes .cartao { animation: none !important; transition: none !important; }
 }
+
+/* contas fixas: forma de pagamento, avisos e destaque ≤ 5 dias */
+.atencao-item.prox { border-left-color: var(--c-aviso); }
+.atencao-item.com-aviso .t small, .conta-linha.com-aviso .t small { color: var(--c-aviso); }
+.selo.forma { font-weight: 700; opacity: .9; }
+.aviso-fixas { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; padding: .4rem .6rem; margin-bottom: .5rem; border-radius: var(--raio); background: var(--c-superficie-2); border: 1px dashed var(--c-linha); font-size: .75rem; color: var(--c-texto-2); }
+.aviso-fixas > span:first-child { flex: 1 1 14rem; }
+.filtro-forma { margin: .3rem 0; max-width: 16rem; }
+/* Atenção agora na tela Hoje larga: colunas estreitas, então o "sem valor" fica só no celular (a linha completa está em Família) */
+@media (min-width: 761px) { .hoje-wrap .atencao-item .sv { display: none; } }
+/* selo curto ("20 d atraso") nas colunas estreitas da tela Hoje larga; texto completo no resto */
+.selo .cp { display: none; }
+@media (min-width: 761px) { .hoje-wrap .atencao-item .selo .lg { display: none; } .hoje-wrap .atencao-item .selo .cp { display: inline; } }

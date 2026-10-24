@@ -153,4 +153,12 @@ t('mais de 100 itens são enviados em lotes', function () {
   return X.ciclo().then(function (r) { assert(r.enviados >= 250); return Y.ciclo(); }).then(function () { assert.strictEqual(Y.st.foco.length, 250); });
 });
 
+t('contas fixas entram na coleção sincronizada "contas" (mesmo caminho cifrado); editar forma/banco muda o item', function () {
+  var c = { id: 'fixa-agua', titulo: 'Água', fixa: 'agua', forma: 'gerar', obs: '', valor: null };
+  var l = N.itensLocais({ contas: [c], config: {}, listas: [], checks: {} });
+  assert.ok(l['contas|fixa-agua'] && l['contas|fixa-agua'].d.forma === 'gerar');
+  var h1 = N.hashDe(l['contas|fixa-agua'].d); c.forma = 'pix'; c.obs = 'Banco';
+  assert.notStrictEqual(N.hashDe(N.itensLocais({ contas: [c], config: {}, listas: [], checks: {} })['contas|fixa-agua'].d), h1);
+});
+
 fila.then(function () { console.log('\n' + ok + ' ok, ' + falhas + ' falhas'); process.exit(falhas ? 1 : 0); });

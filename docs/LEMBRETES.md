@@ -17,3 +17,6 @@ Aviso confiável com o app fechado exigiria **Web Push**: um Worker com *cron* n
 
 ## Teste
 `python3 tools/teste-financas.py` (relógio falso: 3, 1 e 0 dias; sem repetir; vencida 1×/dia; nada de madrugada; agenda para o service worker) e `node tools/teste-financeiro.js` (.ics válido).
+
+## Forma de pagamento
+Contas com **Gerar boleto** avisam também 5 dias antes; **Débito automático** lembra de conferir o saldo (1–2 dias antes) e nunca é dado como pago. Detalhes em [CONTAS-FIXAS.md](CONTAS-FIXAS.md).

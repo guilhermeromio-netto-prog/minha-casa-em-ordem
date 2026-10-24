@@ -24,7 +24,7 @@ with sync_playwright() as p:
     pg.on('pageerror', lambda e: erros.append(str(e)))
     pg.goto(base + '#/'); pg.wait_for_selector('.hoje'); pg.evaluate(CONTAS); pg.evaluate("location.hash='#/familia'"); pg.wait_for_timeout(300); pg.evaluate("location.hash='#/'"); pg.wait_for_timeout(500)
     tx = pg.inner_text('.atencao')
-    check('Luz' in tx and 'Venceu há 2 dias' in tx, 'Atenção agora mostra vencida primeiro')
+    check('Luz' in tx and '2 d atraso' in tx, 'Atenção agora mostra vencida primeiro')
     itens = pg.eval_on_selector_all('.atencao-item', 'els=>els.map(e=>e.innerText.split("\\n")[0])')
     check(itens[:2] == ['Luz', 'Água'], 'ordem por urgência: %s' % itens)
     check(pg.evaluate("!!document.querySelector('.atencao.urgente')"), 'faixa vermelha quando há vencida/hoje')

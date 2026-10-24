@@ -8,12 +8,13 @@
   var CHAVE_MIG = 'painelsala.migracoes';
   var CHAVE_SYNC = 'painelsala.sync';
   var DONOS = ['gui', 'esposa', 'casal'];
+  var FORMAS = ['boleto', 'pix', 'debito', 'gerar', 'outro'];
   var STATUS_FAT = ['aberta', 'fechada', 'paga'];
   var CATS = ['mercado', 'restaurante', 'transporte', 'saude', 'educacao', 'lazer', 'assinaturas', 'casa', 'compras', 'viagens', 'encargos', 'outros'];
   var hooksGravar = [], semHook = 0;
   var estado = null, ouvintes = [];
 
-  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos', antecedencia: [3, 1, 0], notificar: false, orcamento: null };
+  var PADRAO_CONFIG = { cidade: 'Osasco, SP', lat: -23.5325, lon: -46.7917, fonte: 1, contraste: false, noiteAuto: true, escurecerMin: 10, nome: '', esposa: 'Esposa', filtroDono: 'todos', antecedencia: [3, 1, 0], notificar: false, orcamento: null, fixasAuto: false, fixasAviso: false };
   var PRIORIDADES = ['alta', 'media', 'baixa'];
 
   function vazio() {
@@ -56,7 +57,8 @@
       fonte: Math.round(num(c.fonte, 1, 3, 1)), contraste: !!c.contraste, noiteAuto: c.noiteAuto !== false,
       escurecerMin: Math.round(num(c.escurecerMin, 0, 120, 10)), nome: str(c.nome, 40),
       esposa: str(c.esposa, 20) || PADRAO_CONFIG.esposa, filtroDono: ['todos', 'meus', 'dela', 'nos'].indexOf(c.filtroDono) >= 0 ? c.filtroDono : 'todos',
-      antecedencia: antecOk(c.antecedencia), notificar: c.notificar === true, orcamento: c.orcamento == null || c.orcamento === '' ? null : num(c.orcamento, 0, 1e8, null)
+      antecedencia: antecOk(c.antecedencia), notificar: c.notificar === true, orcamento: c.orcamento == null || c.orcamento === '' ? null : num(c.orcamento, 0, 1e8, null),
+      fixasAuto: c.fixasAuto === true, fixasAviso: c.fixasAviso === true
     };
     s.habitos = arr(o.habitos).slice(0, 30).map(function (x) {
       return { id: id(x), nome: str(x.nome, 40) || 'Hábito', icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'check', exemplo: !!x.exemplo };
@@ -81,7 +83,9 @@
       var valores = {}; if (x.valores && typeof x.valores === 'object') Object.keys(x.valores).slice(0, 48).forEach(function (k) { var n = Number(x.valores[k]); if (/^\d{4}-\d{2}$/.test(k) && isFinite(n)) valores[k] = Math.min(1e9, Math.max(0, n)); });
       var v = (x.valor === '' || x.valor == null) ? null : num(x.valor, 0, 1e9, null);
       return { id: id(x), titulo: str(x.titulo, 80) || 'Conta', mensal: x.mensal !== false, dia: Math.round(num(x.dia, 1, 31, 1)), data: U.dataValida(x.data) ? x.data : '', valor: v, paga: !!x.paga, pagaEm: iso(x.pagaEm), pagas: pagas, valores: valores,
-        desde: /^\d{4}-\d{2}$/.test(String(x.desde || '')) ? x.desde : '', cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'casa', dono: donoOk(x.dono), icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo };
+        desde: /^\d{4}-\d{2}$/.test(String(x.desde || '')) ? x.desde : '', cat: CATS.indexOf(x.cat) >= 0 ? x.cat : 'casa', dono: donoOk(x.dono), icone: PS.iconeFamiliaOk(x.icone) ? x.icone : '', exemplo: !!x.exemplo,
+        anual: x.anual === true, mes: x.anual === true ? Math.round(num(x.mes, 1, 12, 1)) : 0, arquivada: x.arquivada === true, forma: FORMAS.indexOf(x.forma) >= 0 ? x.forma : '',
+        obs: str(x.obs, 60), fixa: /^[a-z0-9-]{0,24}$/.test(String(x.fixa || '')) ? String(x.fixa || '') : '', cartaoRef: str(x.cartaoRef, 30) };
     });
     s.links = arr(o.links).slice(0, 40).filter(function (x) { return urlOk(x.url); }).map(function (x) {
       return { id: id(x), titulo: str(x.titulo, 40) || 'Link', url: x.url, icone: PS.iconesLista.indexOf(x.icone) >= 0 ? x.icone : 'globo', exemplo: !!x.exemplo };
@@ -190,6 +194,12 @@
         .then(function () { persistir(); return estado; });
     },
     get: function () { return estado; },
+    /* Contas fixas sugeridas: carga automática ÚNICA na 1ª abertura com a lista de contas de casa vazia (ver PS.fin.fixasAuto).
+       Não roda com a nuvem ligada (o conteúdo vem da família). */
+    fixasAutoUmaVez: function (hoje) {
+      if (!PS.fin || !estado || estado.config.fixasAuto || sincronizando()) return false;
+      store.alterar(function (s) { PS.fin.fixasAuto(s, hoje, false); }, true); return true;
+    },
     /* a sincronização grava itens recebidos sem disparar um novo envio */
     aplicarRemoto: function (fn) { semHook++; try { fn(estado); persistir(); } finally { semHook--; } notificar(); },
     aoGravar: function (f) { hooksGravar.push(f); },
@@ -245,7 +255,7 @@
       ['habitos', 'tarefas', 'compromissos', 'lembretes', 'contas', 'links', 'foco'].forEach(function (k) {
         s[k] = s[k].map(function (x) { delete x.exemplo; if (k !== 'habitos') delete x.id; if (k === 'tarefas') delete x.feita; if (k === 'compromissos' && x.fonte === 'manual') delete x.fonte; return x; });
       });
-      s.contas.forEach(function (c) { if (c.valor === null) delete c.valor; if (!c.data) delete c.data; if (!c.paga) delete c.paga; if (c.pagas && !Object.keys(c.pagas).length) delete c.pagas; });
+      s.contas.forEach(function (c) { if (c.valor === null) delete c.valor; if (!c.data) delete c.data; if (!c.paga) delete c.paga; ['forma', 'obs', 'fixa', 'cartaoRef', 'anual', 'mes', 'arquivada'].forEach(function (k) { if (!c[k]) delete c[k]; }); if (c.pagas && !Object.keys(c.pagas).length) delete c.pagas; });
       s.lembretes.forEach(function (c) { if (c.feitos && !Object.keys(c.feitos).length) delete c.feitos; if (!c.obs) delete c.obs; });
       return s;
     },

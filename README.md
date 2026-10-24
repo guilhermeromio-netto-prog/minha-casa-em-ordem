@@ -14,7 +14,7 @@ App da família para o **celular**: rotina, tarefas, agenda, contas a pagar, **f
 |---|---|
 | `#/` Hoje | Hora, clima, **Atenção agora** (contas vencidas/a vencer, fatura aberta), compromissos, tarefas, hábitos |
 | `#/rotina` · `#/tarefas` · `#/agenda` | Hábitos com sequência; tarefas por lista; compromissos (manuais ou `.ics`) |
-| `#/familia` | Contas e lembretes: **Em aberto · Pagas · Histórico**, anel pago × em aberto, gráfico por mês, vencidas em destaque |
+| `#/familia` | Contas e lembretes: **Em aberto · Pagas · Histórico**, anel pago × em aberto, gráfico por mês, vencidas em destaque; **contas fixas sugeridas** com forma de pagamento (selo e filtro) — ver [docs/CONTAS-FIXAS.md](docs/CONTAS-FIXAS.md) |
 | `#/cartoes` | Cartões e faturas: envie o **PDF** da fatura → revisão → painel (rosca por categoria, barras por mês, comparação com o mês anterior, busca, CSV) |
 | `#/sincronizar` | Sincronização opcional **cifrada de ponta a ponta** entre os celulares |
 | `#/gerenciar` | Editar tudo, ajustes, backup JSON, link de configuração, bloqueio do app |
@@ -51,7 +51,7 @@ sync-worker/ (Worker de sincronização)   portal-worker/ (Worker do login + app
 ```bash
 python3 -m http.server 8000                 # http://localhost:8000 (sem login)
 node tools/teste-unidade.js; node tools/teste-financeiro.js; node tools/teste-cartoes-calc.js; node tools/teste-fatura.mjs
-python3 tools/teste-financas.py --chrome /usr/bin/google-chrome   # idem teste-cartoes.py, teste-smoke.py
+python3 tools/teste-financas.py --chrome /usr/bin/google-chrome   # idem teste-cartoes.py, teste-smoke.py; teste-contas-fixas.py
 tools/versionar.sh                          # antes de publicar: carimba ?v=<hash> e a versão do service worker
 bash tools/montar-dist.sh                   # dist/ só com os arquivos do app (Pages e Cloudflare usam isso)
 ```

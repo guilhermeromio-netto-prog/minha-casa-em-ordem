@@ -4,10 +4,16 @@
   var PS = g.PS = g.PS || {};
   var U = PS.u, h = U.h, I = PS.icone, S = PS.store, F = PS.fin;
   var NIVEL = { vencida: ['perigo', 'alerta'], hoje: ['perigo', 'sino'], amanha: ['aviso', 'sino'], semana: ['neutro', 'calendario'] };
-  var aba = 'abertas';
+  var aba = 'abertas', filtroForma = '';
 
   function brl(v) { return v == null ? '' : U.valorBRL(v); }
-  function seloNivel(p) { var n = NIVEL[p.nivel]; return h('span', { class: 'selo ' + n[0] }, I(n[1]), F.rotuloNivel(p.dias)); }
+  function seloNivel(p) { var n = NIVEL[p.nivel], cl = (p.nivel === 'semana' && p.dias <= 5) ? 'aviso' : n[0]; var cp = p.dias < 0 ? (-p.dias) + ' d atraso' : p.dias === 0 ? 'Hoje' : p.dias === 1 ? 'Amanhã' : 'em ' + p.dias + ' d';
+    return h('span', { class: 'selo ' + cl, 'aria-label': F.rotuloNivel(p.dias) }, I(n[1]), h('span', { class: 'lg' }, F.rotuloNivel(p.dias)), h('span', { class: 'cp' }, cp)); }
+  /* texto de apoio da conta: data · valor (ou "sem valor", discreto) · aviso da forma de pagamento */
+  function apoio(p, comData) {
+    var sv = p.tipo === 'conta' && p.valor == null ? ' · sem valor' : '';
+    return [(comData || '') + (p.valor != null && p.tipo !== 'lembrete' ? ' · ' + brl(p.valor) : ''), sv ? h('span', { class: 'sv' }, sv) : null, p.aviso ? ' · ' + p.aviso : ''];
+  }
   function dataBR(d) { return d ? d.split('-').reverse().join('/') : ''; }
 
   /* ---------- Atenção agora (Hoje) ---------- */
@@ -21,8 +27,8 @@
     } else {
       var mostra = pend.slice(0, max || 4);
       corpo = h('div', { class: 'atencao-lista' }, mostra.map(function (p) {
-        return h('a', { class: 'atencao-item ' + p.nivel, href: p.href, 'data-fid': 'at:' + p.tipo + p.id + p.chave },
-          I(p.icone), h('span', { class: 't' }, p.titulo, h('small', null, dataBR(p.data).slice(0, 5) + (p.valor != null && p.tipo !== 'lembrete' ? ' · ' + brl(p.valor) : ''))), seloNivel(p));
+        return h('a', { class: 'atencao-item ' + p.nivel + (p.destaque && p.nivel === 'semana' ? ' prox' : '') + (p.aviso ? ' com-aviso' : ''), href: p.href, 'data-fid': 'at:' + p.tipo + p.id + p.chave },
+          I(p.icone), h('span', { class: 't' }, p.titulo, h('small', null, apoio(p, dataBR(p.data).slice(0, 5)))), seloNivel(p));
       }));
       if (pend.length > mostra.length) corpo.appendChild(h('a', { class: 'atencao-mais', href: '#/familia', 'data-fid': 'at:mais' }, '+' + (pend.length - mostra.length) + ' em Família'));
     }
@@ -49,8 +55,9 @@
   /* ---------- linha de conta/fatura ---------- */
   function linha(p, paga) {
     var sel = paga ? h('span', { class: 'selo ok' }, I('check'), 'Paga' + (p.pagaEm ? ' em ' + dataBR(p.pagaEm).slice(0, 5) : '')) : seloNivel(p);
-    return h('div', { class: 'conta-linha' + (paga ? ' feito' : '') },
-      h('span', { class: 'cl-info' }, I(p.icone), h('span', { class: 't' }, p.titulo, h('small', null, (paga ? 'Venceu ' : 'Vence ') + dataBR(p.data).slice(0, 5) + (p.valor != null ? ' · ' + brl(p.valor) : '')))),
+    return h('div', { class: 'conta-linha' + (paga ? ' feito' : '') + (!paga && p.aviso ? ' com-aviso' : '') },
+      h('span', { class: 'cl-info' }, I(p.icone), h('span', { class: 't' }, p.titulo, h('small', null, apoio(paga ? { tipo: 'x', valor: p.valor } : p, (paga ? 'Venceu ' : 'Vence ') + dataBR(p.data).slice(0, 5) + (p.anual ? ' (anual)' : '')), p.obs ? ' · ' + p.obs : null))),
+      p.forma ? h('span', { class: 'selo neutro forma', 'data-forma': p.forma }, F.rotuloForma(p.forma)) : null,
       sel,
       paga ? h('button', { class: 'btn peq', type: 'button', 'data-fid': 'dz:' + p.tipo + p.id + p.chave, onclick: function () { desfazer(p); } }, I('desfazer'), 'Desfazer')
         : h('button', { class: 'btn peq primario', type: 'button', 'data-fid': 'mp:' + p.tipo + p.id + p.chave, onclick: function () { marcar(p); } }, I('check'), 'Marcar paga'));
@@ -129,18 +136,42 @@
       h('div', null, h('small', null, 'Contas'), h('strong', null, t.nPagas + '/' + t.n))));
   }
 
+  /* ---------- contas fixas sugeridas ---------- */
+  function adicionarFixas() {
+    var r = null;
+    S.alterar(function (st) { r = F.adicionarFixas(st, U.hoje()); });
+    PS.aviso(r.adicionadas ? r.adicionadas + (r.adicionadas > 1 ? ' contas fixas adicionadas' : ' conta fixa adicionada') + ' (sem valores)' : 'As contas fixas sugeridas já estão na lista');
+  }
+  function avisoFixas(s) {
+    if (!s.config.fixasAviso) return null;
+    return h('div', { class: 'aviso-fixas', role: 'status', 'data-fid': 'fx:aviso' },
+      h('span', null, 'Contas fixas sugeridas carregadas (sem valores). Marque como paga as que já quitou neste mês. Edição em Gerenciar → Família.'),
+      h('span', { class: 'acoes' },
+        h('button', { class: 'btn peq', type: 'button', 'data-fid': 'fx:desfazer', onclick: function () { var n = 0; S.alterar(function (st) { n = F.desfazerFixas(st); }); PS.aviso(n ? 'Contas fixas removidas (' + n + ')' : 'Nada a desfazer'); } }, I('desfazer'), 'Desfazer'),
+        h('button', { class: 'btn peq', type: 'button', 'data-fid': 'fx:ok', onclick: function () { S.alterar(function (st) { st.config.fixasAviso = false; }); } }, 'Ok')));
+  }
+  function filtroFormas(s, hoje) {
+    if (!(s.contas || []).some(function (c) { return c.forma; })) return null;
+    var sel = h('select', { 'data-fid': 'fx:filtro', 'aria-label': 'Filtrar por forma de pagamento' }, F.FORMAS.map(function (f, i) { return h('option', { value: f[0] }, i === 0 ? 'Todas as formas' : f[1]); }));
+    sel.value = filtroForma;
+    sel.addEventListener('change', function () { filtroForma = sel.value; PS.redesenhar(); });
+    return h('label', { class: 'campo filtro-forma' }, h('span', null, 'Forma de pagamento'), sel);
+  }
+
   function painel(s, hoje) {
     var lst = F.listas(s, hoje);
+    if (filtroForma) { lst.abertas = lst.abertas.filter(function (p) { return p.forma === filtroForma; }); lst.pagas = lst.pagas.filter(function (p) { return p.forma === filtroForma; }); }
     var nA = lst.abertas.length, nP = lst.pagas.length;
     var abas = [['abertas', 'Em aberto', nA], ['pagas', 'Pagas', nP], ['hist', 'Histórico', null]].map(function (a) {
       return h('button', { class: 'aba', type: 'button', role: 'tab', 'aria-selected': aba === a[0] ? 'true' : 'false', 'data-fid': 'fa:' + a[0], onclick: function () { aba = a[0]; PS.redesenhar(); } }, a[1], a[2] != null ? h('small', null, a[2]) : null);
     });
     var corpo;
-    if (aba === 'abertas') corpo = [totais(s, hoje), nA ? lst.abertas.map(function (p) { return linha(p, false); }) : h('p', { class: 'vazio' }, 'Nada em aberto. Tudo em dia!'), painelAvisos(s)];
-    else if (aba === 'pagas') corpo = nP ? lst.pagas.slice(0, 40).map(function (p) { return linha(p, true); }) : h('p', { class: 'vazio' }, 'Nenhuma conta marcada como paga ainda.');
+    if (aba === 'abertas') corpo = [avisoFixas(s), totais(s, hoje), filtroFormas(s, hoje), nA ? lst.abertas.map(function (p) { return linha(p, false); }) : h('p', { class: 'vazio' }, filtroForma ? 'Nada em aberto nesta forma de pagamento.' : 'Nada em aberto. Tudo em dia!'),
+      F.fixasFaltando(s).length ? h('div', { class: 'acoes' }, h('button', { class: 'btn', type: 'button', 'data-fid': 'fx:add', onclick: adicionarFixas }, I('carteira'), 'Adicionar contas fixas sugeridas')) : null, painelAvisos(s)];
+    else if (aba === 'pagas') corpo = [filtroFormas(s, hoje), nP ? lst.pagas.slice(0, 40).map(function (p) { return linha(p, true); }) : h('p', { class: 'vazio' }, 'Nenhuma conta marcada como paga ainda.')];
     else corpo = historico(s, hoje);
     return h('section', { class: 'cartao' }, h('h2', null, I('carteira'), h('span', null, 'Contas e faturas')), h('div', { class: 'abas', role: 'tablist' }, abas), corpo);
   }
 
-  PS.finUI = { atencao: atencao, painel: painel, historico: historico, marcar: marcar };
+  PS.finUI = { atencao: atencao, painel: painel, historico: historico, marcar: marcar, adicionarFixas: adicionarFixas };
 })(window);

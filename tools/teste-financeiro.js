@@ -109,4 +109,114 @@ t('agenda para o service worker', function () {
   var s = est({ contas: [conta({ dia: 15 })] }); var a = F.agendaParaSW(s, HOJE, [3, 1, 0]);
   assert.deepStrictEqual(a.map(function (x) { return x.avisar; }).sort(), ['2026-10-12', '2026-10-14', '2026-10-15', '2026-11-12', '2026-11-14', '2026-11-15'].sort());
 });
+
+/* ---------- contas fixas sugeridas, forma de pagamento, anuais, vínculo com fatura ---------- */
+var HJ = '2026-10-24';
+function fixas() { var s = est(); F.adicionarFixas(s, HJ); return s; }
+function porK(s, k) { return s.contas.filter(function (c) { return c.fixa === k; })[0]; }
+t('fixas: cria as 11 (sem valor), idempotente, ids estáveis', function () {
+  var s = fixas(); assert.strictEqual(s.contas.length, 11);
+  assert.ok(s.contas.every(function (c) { return c.valor === null && c.id === 'fixa-' + c.fixa && !c.paga && !c.exemplo; }));
+  var r = F.adicionarFixas(s, HJ); assert.strictEqual(r.adicionadas, 0); assert.strictEqual(s.contas.length, 11);
+  s.contas = s.contas.filter(function (c) { return c.fixa !== 'agua'; }); assert.strictEqual(F.fixasFaltando(s).length, 1);
+  F.adicionarFixas(s, HJ); assert.strictEqual(s.contas.length, 11);
+});
+t('fixas: dias, formas e bancos conforme a lista', function () {
+  var s = fixas(), esp = { escola: [5, 'boleto'], aluguel: [6, 'pix'], luz: [4, 'debito'], pensao: [6, 'pix'], internet: [12, 'debito'], iptu: [16, 'gerar'], financiamento: [15, 'debito'], ipva: [10, 'outro'], nubank: [21, 'gerar'], agua: [22, 'gerar'], 'itau-black': [28, 'debito'] };
+  Object.keys(esp).forEach(function (k) { var c = porK(s, k); assert.strictEqual(c.dia, esp[k][0], k); assert.strictEqual(c.forma, esp[k][1], k); });
+  assert.strictEqual(porK(s, 'luz').obs, 'Bradesco'); assert.strictEqual(porK(s, 'financiamento').obs, 'Itaú');
+  assert.ok(/acesso veículo do Itaú/.test(porK(s, 'ipva').obs)); assert.ok(F.CONTAS_FIXAS.every(function (d) { return !/\d{5,}/.test(JSON.stringify(d)); }));
+});
+t('fixas: remove contas de exemplo ao adicionar', function () {
+  var s = est({ contas: [conta({ id: 'x', titulo: 'Conta de luz', exemplo: true }), conta({ id: 'y', titulo: 'Minha', exemplo: false })] });
+  var r = F.adicionarFixas(s, HJ); assert.strictEqual(r.exemplosRemovidos, 1); assert.ok(s.contas.some(function (c) { return c.id === 'y'; })); assert.ok(!s.contas.some(function (c) { return c.id === 'x'; }));
+});
+t('hoje 24/10: Água vencida (22), Cartão Itaú Black em 4 dias com destaque; ordenado por vencimento', function () {
+  var s = fixas(), p = F.pendencias(s, HJ, 7);
+  var ag = p.filter(function (x) { return x.titulo === 'Água'; })[0], ib = p.filter(function (x) { return x.titulo === 'Cartão Itaú Black'; })[0];
+  assert.strictEqual(ag.nivel, 'vencida'); assert.strictEqual(ag.dias, -2); assert.strictEqual(ib.dias, 4); assert.strictEqual(ib.nivel, 'semana'); assert.ok(ib.destaque);
+  for (var i = 1; i < p.length; i++) assert.ok(p[i - 1].dias <= p[i].dias);
+  assert.ok(!p.some(function (x) { return /IPVA/.test(x.titulo); }), 'IPVA anual (julho) não aparece em outubro');
+  assert.strictEqual(ag.valor, null);
+});
+t('conta nova (desde = mês atual) não gera atraso de meses anteriores; mês seguinte aparece em aberto', function () {
+  var s = fixas(), l = F.listas(s, HJ), esc = l.abertas.filter(function (x) { return x.titulo === 'Escola'; });
+  assert.deepStrictEqual(esc.map(function (x) { return x.data; }), ['2026-10-05', '2026-11-05']);
+});
+t('anual (IPVA, julho): só perto do vencimento; marcar paga é por ano; recorre no ano seguinte', function () {
+  var s = fixas(), c = porK(s, 'ipva');
+  assert.strictEqual(F.ocorrenciasConta(c, '2026-10-24').length, 0);
+  assert.strictEqual(F.ocorrenciasConta(c, '2027-04-01').length, 1);                          /* ~100 dias antes */
+  assert.strictEqual(F.ocorrenciasConta(c, '2027-02-01').length, 0);
+  var o = F.ocorrenciasConta(c, '2027-06-20')[0]; assert.strictEqual(o.data, '2027-07-10'); assert.strictEqual(o.chave, '2027-07');
+  assert.ok(F.marcarPaga(s, 'conta', c.id, '2027-07', '2027-07-08')); assert.strictEqual(c.pagas['2027-07'], '2027-07-08'); assert.strictEqual(c.paga, false);
+  assert.ok(F.ocorrenciasConta(c, '2027-07-20')[0].paga);
+  var o28 = F.ocorrenciasConta(c, '2028-06-20').filter(function (x) { return x.chave === '2028-07'; })[0]; assert.strictEqual(o28.paga, false); assert.strictEqual(o28.data, '2028-07-10');
+  assert.strictEqual(F.proximoVencimento(c, '2026-10-24'), '2027-07-10');
+  F.desfazerPaga(s, 'conta', c.id, '2027-07'); assert.ok(!c.pagas['2027-07']);
+  var pend = F.pendencias(s, '2027-07-12', 7); assert.strictEqual(pend.filter(function (x) { return x.id === c.id; })[0].nivel, 'vencida');
+});
+t('arquivada: some de pendências, listas e .ics', function () {
+  var s = fixas(); porK(s, 'agua').arquivada = true;
+  assert.ok(!F.pendencias(s, HJ, 60).some(function (x) { return x.titulo === 'Água'; }));
+  assert.ok(F.icsDasPendencias(s, HJ, [3, 1, 0], '2026-10-24T12:00:00Z').indexOf('Água') < 0);
+});
+t('forma: "gerar" avisa 5 dias antes; "débito" pede conferir saldo, sem marcar paga', function () {
+  var s = fixas();
+  var iptu = F.pendencias(s, '2026-11-11', 7).filter(function (x) { return x.titulo === 'IPTU' && x.data === '2026-11-16'; })[0];            /* 16/11 → 5 dias */
+  assert.strictEqual(iptu.dias, 5); assert.strictEqual(iptu.aviso, 'Gerar o boleto');
+  var luz = F.pendencias(s, '2026-11-03', 7).filter(function (x) { return x.titulo === 'Luz' && x.data === '2026-11-04'; })[0];             /* 04/11 → amanhã */
+  assert.strictEqual(luz.aviso, 'Confira o saldo na conta'); assert.strictEqual(luz.forma, 'debito');
+  var depois = F.pendencias(s, '2026-11-05', 7).filter(function (x) { return x.titulo === 'Luz'; })[0];
+  assert.strictEqual(depois.nivel, 'vencida'); assert.ok(!porK(s, 'luz').pagas['2026-11']);                    /* débito automático não é pago sozinho */
+  var l = F.listas(s, '2026-11-03').abertas.filter(function (x) { return x.titulo === 'Luz'; })[0]; assert.strictEqual(l.forma, 'debito');
+});
+t('lembretes: extra "gerar o boleto" 5 dias antes mesmo fora das antecedências; saldo 1 dia antes', function () {
+  var s = fixas();
+  var l5 = F.lembretesPara(s, '2026-11-11', [3, 1, 0], {}, 9).filter(function (x) { return /^Gerar boleto: IPTU/.test(x.titulo); });
+  assert.strictEqual(l5.length, 1); assert.ok(/^Gerar boleto: IPTU/.test(l5[0].titulo)); assert.ok(l5[0].corpo.indexOf('Gerar o boleto') >= 0);
+  var l5b = F.lembretesPara(s, '2026-11-11', [3, 1, 0], { [l5[0].chave]: true }, 9).filter(function (x) { return /^Gerar boleto: IPTU/.test(x.titulo); }); assert.strictEqual(l5b.length, 0);
+  var luz = F.lembretesPara(s, '2026-11-03', [3, 0], {}, 9).filter(function (x) { return x.titulo === 'Luz'; });
+  assert.strictEqual(luz.length, 1); assert.ok(luz[0].corpo.indexOf('Confira o saldo na conta') >= 0);
+  var pix = F.lembretesPara(s, '2026-11-05', [3, 1, 0], {}, 9).filter(function (x) { return x.titulo === 'Escola' || x.titulo === 'Aluguel'; });
+  pix.forEach(function (x) { assert.ok(x.corpo.indexOf('saldo') < 0 && x.corpo.indexOf('boleto') < 0); });
+});
+t('.ics inclui as contas fixas, a forma, o evento "Gerar boleto" e o alarme de saldo', function () {
+  var s = fixas(), ics = F.icsDasPendencias(s, '2026-10-24', [3, 1, 0], '2026-10-24T12:00:00Z'), un = ics.replace(/\r\n /g, '');
+  assert.ok(un.indexOf('SUMMARY:Cartão Itaú Black') >= 0); assert.ok(un.indexOf('Forma: Débito automático (Itaú)') >= 0); assert.ok(un.indexOf('confira o saldo') >= 0);
+  assert.ok(un.indexOf('SUMMARY:Gerar boleto: IPTU') >= 0 && un.indexOf('DTSTART;VALUE=DATE:20261111') >= 0);
+  assert.ok(un.indexOf('SUMMARY:Escola') >= 0); assert.ok(un.indexOf('Forma: Boleto') >= 0);
+  assert.ok(un.indexOf('SUMMARY:IPVA') < 0);
+});
+t('service worker: agenda inclui extras por forma', function () {
+  var a = F.agendaParaSW(fixas(), '2026-11-11', [3, 0]);
+  assert.ok(a.some(function (x) { return /Gerar boleto: IPTU/.test(x.titulo); })); assert.ok(a.some(function (x) { return x.titulo === 'Luz' && /saldo/.test(x.corpo); }));
+});
+t('cartão vinculado: com fatura no mês, a conta não duplica e a fatura herda a forma', function () {
+  var s = fixas(); s.cartoes = [{ id: 'k1', apelido: 'Itaú Black', final: '0000', dono: 'casal' }];
+  var antes = F.pendencias(s, HJ, 7).filter(function (x) { return /Itaú Black/.test(x.titulo); }); assert.strictEqual(antes.length, 1); assert.strictEqual(antes[0].tipo, 'conta');
+  s.faturas = [{ id: 'f1', cartao: 'k1', mes: '2026-10', valor: 1234.5, vencimento: '2026-10-28', status: 'aberta', teste: false }];
+  var dep = F.pendencias(s, HJ, 7).filter(function (x) { return /Itaú Black/.test(x.titulo); });
+  assert.strictEqual(dep.length, 1); assert.strictEqual(dep[0].tipo, 'fatura'); assert.strictEqual(dep[0].valor, 1234.5); assert.strictEqual(dep[0].forma, 'debito'); assert.strictEqual(dep[0].obs, 'Itaú');
+  var l = F.listas(s, HJ); assert.strictEqual(l.abertas.filter(function (x) { return /Itaú Black/.test(x.titulo); }).length, 2);   /* fatura de out + conta de nov */
+  var h = F.historico(s, HJ, 2); assert.ok(h.meses[1].faturas > 0);
+  s.faturas[0].teste = true; assert.strictEqual(F.pendencias(s, HJ, 7).filter(function (x) { return /Itaú Black/.test(x.titulo); })[0].tipo, 'conta');   /* fatura de teste não cobre */
+});
+t('carga automática única: lista vazia/só exemplos → carrega + aviso; não repete; contas reais → não carrega; nuvem → não carrega', function () {
+  var cfg = function () { return { fixasAuto: false, fixasAviso: false }; };
+  var s = est({ config: cfg(), contas: [conta({ exemplo: true })] });
+  assert.ok(F.fixasAuto(s, HJ, false)); assert.strictEqual(s.contas.length, 11); assert.ok(s.config.fixasAviso && s.config.fixasAuto);
+  assert.strictEqual(F.fixasAuto(s, HJ, false), false);
+  s.contas = []; assert.strictEqual(F.fixasAuto(s, HJ, false), false); assert.strictEqual(s.contas.length, 0);          /* apagou tudo depois: não recarrega */
+  var r = est({ config: cfg(), contas: [conta({ exemplo: false })] }); F.fixasAuto(r, HJ, false); assert.strictEqual(r.contas.length, 1); assert.ok(r.config.fixasAuto && !r.config.fixasAviso);
+  var n = est({ config: cfg() }); assert.strictEqual(F.fixasAuto(n, HJ, true), false); assert.strictEqual(n.contas.length, 0); assert.strictEqual(n.config.fixasAuto, false);
+});
+t('desfazer: remove só as fixas intocadas e apaga o aviso', function () {
+  var s = est({ config: { fixasAuto: true, fixasAviso: true } }); F.adicionarFixas(s, HJ);
+  porK(s, 'escola').valor = 500; F.marcarPaga(s, 'conta', 'fixa-agua', '2026-10', HJ);
+  var n = F.desfazerFixas(s); assert.strictEqual(n, 9); assert.strictEqual(s.contas.length, 2); assert.ok(!s.config.fixasAviso);
+});
+t('formas válidas e rótulos', function () {
+  assert.strictEqual(F.formaOk('pix'), 'pix'); assert.strictEqual(F.formaOk('x'), ''); assert.strictEqual(F.rotuloForma('gerar'), 'Gerar boleto'); assert.strictEqual(F.FORMAS.length, 6);
+});
 console.log('\n' + ok + ' ok, ' + falhas + ' falhas'); process.exit(falhas ? 1 : 0);
