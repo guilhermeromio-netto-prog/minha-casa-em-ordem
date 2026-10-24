@@ -1,4 +1,4 @@
-/* Painel da Sala — domínio financeiro PURO (sem DOM): pendências ("Atenção agora"), pago/em aberto, histórico, lembretes e .ics.
+/* Minha Casa em Ordem — domínio financeiro PURO (sem DOM): pendências ("Atenção agora"), pago/em aberto, histórico, lembretes e .ics.
    Contas de casa e faturas do cartão. Nada é marcado como pago automaticamente: só por ação manual (com data).
    Testado em Node: node tools/teste-financeiro.js */
 (function (g) {
@@ -199,11 +199,11 @@
   /* itens: [{uid, titulo, data 'AAAA-MM-DD', descricao, alarmes:[dias antes]}]; evento de dia inteiro + VALARM por antecedência (09:00 do dia do alarme) */
   F.gerarIcs = function (itens, agoraIso) {
     var carimbo = (agoraIso || new Date().toISOString()).replace(/[-:]/g, '').replace(/\.\d+/, '').slice(0, 15) + 'Z';
-    var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Painel da Sala//byGui//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Painel da Sala · contas'];
+    var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Minha Casa em Ordem//byGui//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Minha Casa em Ordem · contas'];
     itens.forEach(function (it) {
       if (!U.dataValida(it.data)) return;
-      L.push('BEGIN:VEVENT', 'UID:' + String(it.uid).replace(/[^A-Za-z0-9_.@-]/g, '') + '@painel-sala', 'DTSTAMP:' + carimbo, 'DTSTART;VALUE=DATE:' + dataIcs(it.data), 'DTEND;VALUE=DATE:' + dataIcs(U.somaDias(it.data, 1)),
-        'SUMMARY:' + esc(it.titulo), 'DESCRIPTION:' + esc(it.descricao || 'Lembrete do Painel da Sala. Confira no app do banco; este lembrete não confirma pagamento.'), 'TRANSP:TRANSPARENT');
+      L.push('BEGIN:VEVENT', 'UID:' + String(it.uid).replace(/[^A-Za-z0-9_.@-]/g, '') + '@minha-casa-em-ordem', 'DTSTAMP:' + carimbo, 'DTSTART;VALUE=DATE:' + dataIcs(it.data), 'DTEND;VALUE=DATE:' + dataIcs(U.somaDias(it.data, 1)),
+        'SUMMARY:' + esc(it.titulo), 'DESCRIPTION:' + esc(it.descricao || 'Lembrete do Minha Casa em Ordem. Confira no app do banco; este lembrete não confirma pagamento.'), 'TRANSP:TRANSPARENT');
       (it.alarmes && it.alarmes.length ? it.alarmes : [3, 1, 0]).forEach(function (d) {
         L.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(it.titulo), 'TRIGGER:' + (d === 0 ? 'PT9H' : '-P' + (d - 1) + 'DT15H'), 'END:VALARM');
       });

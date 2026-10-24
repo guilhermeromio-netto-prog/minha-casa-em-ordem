@@ -1,7 +1,7 @@
-# Sincronização na nuvem (TV + celulares) — cifrada de ponta a ponta
+# Sincronização na nuvem (celulares) — cifrada de ponta a ponta
 
-O Painel da Sala continua **offline-first**: tudo funciona sem internet com os dados do próprio aparelho.
-A sincronização é opcional e liga TV, celular do Gui e celular da esposa ao **mesmo conjunto de dados**.
+O Minha Casa em Ordem continua **offline-first**: tudo funciona sem internet com os dados do próprio aparelho.
+A sincronização é opcional e liga o celular do Gui e o da esposa ao **mesmo conjunto de dados**. Ela é independente do login do site: a **senha da família** (que cifra os dados) é diferente da senha de login da Cloudflare.
 
 - **Worker:** `https://painel-sala-sync.guilhermeromionetto.workers.dev` (Cloudflare Workers, código em `sync-worker/worker.js`)
 - **Banco:** D1 `painel-sala` (id `11d6c73a-54b3-43fd-ab5b-4ca68bf7c432`)
@@ -9,25 +9,25 @@ A sincronização é opcional e liga TV, celular do Gui e celular da esposa ao *
 
 ## Como criar a família (uma vez)
 
-Recomendado **no celular** (digitar a senha é muito mais fácil que na TV).
+Recomendado **no celular**.
 
 1. Abra o painel → **Gerenciar → Sincronização → Criar ou entrar numa família** (ou `#/sincronizar`).
 2. **Criar a família**: escolha um **PIN** (4 a 8 números; o servidor recusa 1234, 0000 etc.) e repita.
 3. Escolha a **senha da família** (mín. 8 caracteres; uma frase de 3–4 palavras serve). Ela é *diferente* do PIN.
 4. A tela mostra **uma única vez**: o **código da família** (8 números) e a **chave de recuperação** (26 caracteres). Anote em papel/gerenciador de senhas. Baixe também o **backup cifrado**.
 
-## Como a esposa (ou a TV) entra
+## Como a esposa (ou outro aparelho) entra
 
 1. `#/sincronizar` → **Entrar numa família que já existe**.
-2. Digite o **código** (8 números) e o **PIN** no teclado da tela (funciona com o controle remoto: setas + OK).
+2. Digite o **código** (8 números) e o **PIN**.
 3. Digite a **senha da família** (ou use a chave de recuperação se esqueceu a senha).
 4. Se o aparelho já tem dados: o padrão é **"Juntar os dados deste aparelho com a família"** (mescla por item; nada é apagado). A opção "Usar só os dados da família" substitui os locais e pede confirmação.
 
 Na tela de sincronização há **Aparelhos conectados** (com revogação), **Sair deste aparelho**, **Sair de todos**, trocar PIN, trocar senha, nova chave de recuperação e excluir a família.
 
-## Atualizar o cache na TV / APK
+## Atualizar o cache no celular
 
-O APK é um WebView que carrega o site; não precisa recompilar. O service worker é *network-first*: abrir o painel com internet já baixa a versão nova. Se a TV insistir na antiga: feche e abra o app; ou Configurações do Android → Apps → Painel da Sala → Limpar cache (não apaga os dados).
+O service worker é *network-first*: abrir o app com internet já baixa a versão nova. Se o celular insistir na antiga: feche e abra o app, ou limpe os dados do site (isso apaga os dados locais: faça backup/sincronize antes).
 
 ## Como funciona (resumo técnico)
 
@@ -36,7 +36,7 @@ O APK é um WebView que carrega o site; não precisa recompilar. O service worke
 - O id opaco é um HMAC do id real: o servidor não consegue ligar o item a nada.
 - No aparelho, as chaves ficam no **IndexedDB como CryptoKey não extraível**. A senha em texto nunca é gravada.
 - **Conflitos:** vence a escrita mais recente **por item** (last-write-wins). Exclusões viram *tombstones* (por 120 dias) e não "ressuscitam". Se a senha de dois aparelhos editar o mesmo item ao mesmo tempo, a edição mais recente vence — a diferença de relógio entre aparelhos pode inverter edições quase simultâneas (o servidor limita relógios no futuro a +5 min).
-- **Fonte e contraste** do painel ficam **só no aparelho** (a TV precisa de letra maior que o celular). Todo o resto é compartilhado.
+- **Fonte e contraste** do app ficam **só no aparelho**. Todo o resto é compartilhado (inclui cartões, faturas, lançamentos e regras de categoria).
 - **Sincronização:** ao abrir, ao voltar o foco, a cada 60 s com a tela visível e ~2,5 s depois de cada edição. Na tela Hoje há um indicador (ok / atrasado / offline).
 
 ## Autenticação, limites e lockout
@@ -44,7 +44,7 @@ O APK é um WebView que carrega o site; não precisa recompilar. O service worke
 - Código (8 dígitos) + PIN → o servidor devolve um **token aleatório de sessão**; só o **hash** do token fica no D1 e pode ser revogado.
 - O PIN no servidor é guardado como HMAC com um segredo do Worker (`PEPPER`) + PBKDF2. O PIN **não cifra** nada: só autoriza um aparelho a baixar o material cifrado.
 - **Lockout:** 5 falhas por família+IP em 10 min bloqueiam por 15 min; limites por família e por IP; criação de famílias limitada por IP. Mesmo assim, um PIN de 4 dígitos é fraco **sozinho** — por isso os dados são cifrados pela senha: quem descobrir código+PIN baixa apenas texto ilegível.
-- Corpo máximo 512 KB; CORS restrito a `https://guilhermeromio-netto-prog.github.io`; cabeçalhos de segurança; nenhum PIN/token/senha vai para log.
+- Corpo máximo 512 KB; CORS restrito a `https://guilhermeromio-netto-prog.github.io` e `https://minha-casa-em-ordem.guilhermeromionetto.workers.dev`; cabeçalhos de segurança; nenhum PIN/token/senha vai para log.
 
 ## Modelo de ameaça (honesto)
 
@@ -60,7 +60,7 @@ O APK é um WebView que carrega o site; não precisa recompilar. O service worke
 
 ## Limites do plano gratuito (Cloudflare)
 
-Workers: 100 mil requisições/dia. D1: 5 milhões de leituras/dia, 100 mil escritas/dia, 5 GB. Uma família com 3 aparelhos sincronizando a cada 60 s fica na casa de poucos milhares de requisições/dia; não se espera chegar ao limite, mas ele existe. Se ocorrer, o painel segue funcionando offline e sincroniza depois.
+Workers: 100 mil requisições/dia **para a conta inteira** (compartilhado com os outros Workers do dono). D1: 5 milhões de leituras/dia, 100 mil escritas/dia, 5 GB. Uma família com 3 aparelhos sincronizando a cada 60 s fica na casa de poucos milhares de requisições/dia; não se espera chegar ao limite, mas ele existe. Se ocorrer, o painel segue funcionando offline e sincroniza depois.
 
 ## Testes
 

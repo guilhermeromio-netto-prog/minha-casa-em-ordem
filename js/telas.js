@@ -1,4 +1,4 @@
-/* Telas de exibição da TV: Hoje, Rotina, Tarefas, Agenda, Família, Relaxar, Teclas, Importar, Instalar. */
+/* Telas: Hoje, Rotina, Tarefas, Agenda, Família, Relaxar, Importar, Instalar. */
 (function (g) {
   'use strict';
   var PS = g.PS = g.PS || {};
@@ -182,30 +182,6 @@
       h('p', { class: 'nota' }, 'Dica: para voltar do YouTube ao painel, use o botão Voltar do controle.'));
   } };
 
-  /* ---------- TECLAS (diagnóstico do controle remoto) ---------- */
-  var regTeclas = [], elUltima = null, elTabela = null;
-  PS.tecla = function (e) {
-    if (PS.rotaAtual !== 'teclas' || !elUltima) return;
-    regTeclas.unshift({ key: e.key, code: e.code, kc: e.keyCode, w: e.which, loc: e.location, t: U.agora().hhmm + ':' + U.pad(U.agora().s) });
-    regTeclas = regTeclas.slice(0, 10);
-    var r = regTeclas[0];
-    elUltima.textContent = (r.key === ' ' ? 'Espaço' : r.key) + '  ·  keyCode ' + r.kc;
-    U.limpar(elTabela);
-    elTabela.appendChild(h('tr', null, ['hora', 'key', 'code', 'keyCode', 'which'].map(function (x) { return h('th', null, x); })));
-    regTeclas.forEach(function (x) { elTabela.appendChild(h('tr', null, [x.t, x.key, x.code || '–', x.kc, x.w].map(function (v) { return h('td', null, String(v)); }))); });
-  };
-  views.teclas = { reativo: false, titulo: 'Teclas', render: function () {
-    regTeclas = [];
-    elUltima = h('div', { class: 'teclas-ultima', 'aria-live': 'polite' }, 'Aperte um botão do controle…');
-    elTabela = h('table', { class: 'tabela-teclas' });
-    var info = 'Tela ' + g.screen.width + '×' + g.screen.height + ' · janela ' + g.innerWidth + '×' + g.innerHeight + ' · pixel ratio ' + g.devicePixelRatio + ' · ' + navigator.userAgent;
-    return h('div', null, h('h1', { class: 'titulo-tela' }, 'Teste do controle remoto'),
-      h('p', { class: 'nota' }, 'Aperte qualquer botão: setas, OK, Voltar, Menu, números… O código aparece abaixo. Nesta tela o botão Voltar NÃO sai: use o botão “Sair do teste”.'),
-      h('div', { class: 'cartao' }, elUltima, elTabela),
-      h('p', { class: 'info-disp' }, info),
-      h('div', { class: 'acoes' }, h('a', { class: 'btn primario', href: '#/' }, 'Sair do teste')));
-  } };
-
   /* ---------- IMPORTAR (link de configuração) ---------- */
   views.importar = { reativo: false, titulo: 'Importar', render: function (param) {
     var dados = null, erro = null;
@@ -220,26 +196,24 @@
         h('a', { class: 'btn', href: '#/' }, 'Cancelar')));
   } };
 
-  /* ---------- INSTALAR (APK via Downloader) ---------- */
+  /* ---------- INSTALAR (PWA no celular) ---------- */
+  var promptInstalar = null;
+  g.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); promptInstalar = e; });
+  g.addEventListener('appinstalled', function () { promptInstalar = null; });
   views.instalar = { reativo: false, titulo: 'Instalar', render: function () {
     var base = g.location.href.split('#')[0].replace(/index\.html$/, '');
-    var curta = base + 'painel.apk';
-    var noApp = /PainelSalaApp/.test(navigator.userAgent);
-    var passos = [
-      ['Abra o app Downloader', 'na TV box (ícone laranja da AFTVnews).'],
-      ['Digite o endereço do app', curta.replace(/^https?:\/\//, '')],
-      ['Aperte “Ir” e depois “Instalar”', 'Se a TV pedir, permita “Fontes desconhecidas” para o Downloader e volte.'],
-      ['Abra pelo menu da TV', 'procure “Painel da Sala” em Apps. Se não aparecer, abra em Configurações → Apps.'],
-      ['Pronto', 'Dados ficam salvos no aparelho. Para atualizar, repita o passo 2.']
-    ];
-    return h('div', null, h('h1', { class: 'titulo-tela' }, 'Instalar na TV box'),
-      noApp ? h('p', { class: 'nota' }, 'Você já está usando o app instalado.') : null,
-      h('div', { class: 'cartao' }, passos.map(function (p, i) {
-        return h('div', { class: 'item dupla', style: 'min-height:2.2rem', tabindex: '0', 'data-f': '' }, h('span', { class: 'selo mag' }, String(i + 1)), h('span', { class: 't' }, p[0], h('small', null, p[1])));
-      })),
-      h('div', { class: 'cartao', style: 'margin-top:.6rem' }, h('h2', null, I('globo'), h('span', null, 'Sem instalar (só navegador)')),
-        h('p', { class: 'nota' }, 'Abra no navegador da TV box: ' + base.replace(/^https?:\/\//, '') + ' e use “Adicionar à tela inicial” (se o navegador permitir) ou salve nos favoritos.')),
-      h('div', { class: 'acoes' }, h('a', { class: 'btn primario', href: curta }, 'Baixar o APK agora'), h('a', { class: 'btn', href: '#/' }, 'Voltar')));
+    var jaInstalado = g.matchMedia && g.matchMedia('(display-mode: standalone)').matches || g.navigator.standalone === true;
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var passosAndroid = [['Abra no Chrome', base.replace(/^https?:\/\//, '')], ['Toque nos três pontinhos ⋮', 'canto superior direito do Chrome.'], ['Toque em “Instalar app” (ou “Adicionar à tela inicial”)', 'O ícone “Casa em Ordem” aparece junto dos seus apps.'], ['Abra pelo ícone', 'Abre em tela cheia, como um app, e funciona sem internet depois da primeira vez.']];
+    var passosIos = [['Abra no Safari', 'No iPhone precisa ser o Safari (não o Chrome).'], ['Toque em Compartilhar', 'o quadradinho com a seta para cima, na barra de baixo.'], ['Role e toque em “Adicionar à Tela de Início”', 'Confirme o nome “Casa em Ordem” e toque em Adicionar.'], ['Abra pelo ícone', 'Avisos de vencimento no iPhone só funcionam depois de instalar na Tela de Início (iOS 16.4 ou mais novo).']];
+    function lista(ps) { return ps.map(function (p, i) { return h('div', { class: 'item dupla', style: 'min-height:2.2rem' }, h('span', { class: 'selo mag' }, String(i + 1)), h('span', { class: 't' }, p[0], h('small', null, p[1]))); }); }
+    return h('div', null, h('h1', { class: 'titulo-tela' }, 'Instalar no celular'),
+      jaInstalado ? h('p', { class: 'nota' }, 'Você já está usando o app instalado.') : null,
+      !jaInstalado && promptInstalar ? h('div', { class: 'acoes' }, h('button', { class: 'btn primario', type: 'button', 'data-fid': 'in:instalar', onclick: function () { var p = promptInstalar; promptInstalar = null; p.prompt(); p.userChoice.then(function () { PS.redesenhar(); }); } }, I('baixar'), 'Instalar agora')) : null,
+      h('div', { class: 'cartao' }, h('h2', null, I('globo'), h('span', null, ios ? 'iPhone (Safari)' : 'Android (Chrome)')), lista(ios ? passosIos : passosAndroid)),
+      h('div', { class: 'cartao', style: 'margin-top:.6rem' }, h('h2', null, I('globo'), h('span', null, ios ? 'Android (Chrome)' : 'iPhone (Safari)')), lista(ios ? passosAndroid : passosIos)),
+      h('div', { class: 'cartao', style: 'margin-top:.6rem' }, h('h2', null, I('globo'), h('span', null, 'Só no navegador')), h('p', { class: 'nota' }, 'Também funciona sem instalar: abra o endereço no navegador do celular ou do computador e salve nos favoritos. Os dados ficam salvos neste aparelho; para ter os mesmos dados nos dois celulares use Gerenciar → Sincronizar.')),
+      h('div', { class: 'acoes' }, h('a', { class: 'btn', href: '#/' }, 'Voltar')));
   } };
 
   PS.limparClima = function () { climaMem = null; };

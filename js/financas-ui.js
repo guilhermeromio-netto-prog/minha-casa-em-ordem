@@ -104,7 +104,7 @@
     var botoes = [];
     botoes.push(h('button', { class: 'btn', type: 'button', 'data-fid': 'av:ics', onclick: function () {
       var ics = F.icsDasPendencias(S.get(), U.hoje(), S.get().config.antecedencia, new Date().toISOString());
-      PS.arq.baixar('contas-painel-da-sala.ics', ics, 'text/calendar'); PS.aviso('Arquivo .ics baixado: abra no calendário do celular');
+      PS.arq.baixar('contas-minha-casa-em-ordem.ics', ics, 'text/calendar'); PS.aviso('Arquivo .ics baixado: abra no calendário do celular');
     } }, I('baixar'), 'Adicionar ao calendário (.ics)'));
     if (sup.notif) botoes.push(h('button', { class: 'btn' + (ligado ? '' : ' primario'), type: 'button', 'data-fid': 'av:notif', onclick: function () {
       if (ligado) { L.desativar(); PS.aviso('Avisos neste aparelho desligados'); PS.redesenhar(); } else L.ativar().then(function (r) { PS.aviso(r.msg); PS.redesenhar(); });

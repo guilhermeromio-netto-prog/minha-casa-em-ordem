@@ -3,7 +3,7 @@
   'use strict';
   var PS = g.PS = g.PS || {};
   var U = PS.u, S = PS.store;
-  var ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'cartoes', 'relaxar', 'gerenciar', 'teclas', 'importar', 'instalar', 'sincronizar'];
+  var ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'cartoes', 'relaxar', 'gerenciar', 'importar', 'instalar', 'sincronizar'];
   var viewAtual = null, paramAtual = '';
   var principal = function () { return document.getElementById('app'); };
 
@@ -26,7 +26,7 @@
     var as = document.querySelectorAll('.menu a');
     Array.prototype.forEach.call(as, function (a) {
       var r = a.getAttribute('href').replace('#/', '');
-      if (r === (PS.rotaAtual === 'importar' || PS.rotaAtual === 'teclas' || PS.rotaAtual === 'instalar' || PS.rotaAtual === 'sincronizar' ? '__' : PS.rotaAtual)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      if (r === (PS.rotaAtual === 'importar' || PS.rotaAtual === 'instalar' || PS.rotaAtual === 'sincronizar' ? '__' : PS.rotaAtual)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
   }
 
@@ -38,7 +38,7 @@
     var rolagem = main.scrollTop;
     var no = v.render(paramAtual);
     U.limpar(main); main.appendChild(no);
-    document.title = (v.titulo && viewAtual !== 'hoje' ? v.titulo + ' · ' : '') + 'Painel da Sala';
+    document.title = (v.titulo && viewAtual !== 'hoje' ? v.titulo + ' · ' : '') + 'Minha Casa em Ordem';
     tick();
     if (PS.lembretes) PS.lembretes.atualizarBadge();
     if (manterFoco) {

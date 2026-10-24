@@ -5,5 +5,5 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 V=$(cat css/*.css js/*.js dados.json | sha1sum | cut -c1-7)
 sed -i -E "s#(\.(css|js))\?v=[A-Za-z0-9]+#\1?v=$V#g" index.html
-sed -i -E "s#^var VERSAO = .*#var VERSAO = 'painel-sala-$V';#" sw.js
+sed -i -E "s#^var VERSAO = .*#var VERSAO = 'minha-casa-$V';#" sw.js
 echo "versao $V"

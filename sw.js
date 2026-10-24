@@ -1,11 +1,18 @@
 /* Service worker simples: rede primeiro, cache como reserva (casca offline). Troque VERSAO a cada release (tools/versionar.sh faz isso). */
-var VERSAO = 'painel-sala-cdb2204';
-var ARQUIVOS = ['./', 'index.html', 'dados.json', 'manifest.webmanifest', 'assets/favicon.svg', 'icons/icon-192.png',
+var VERSAO = 'minha-casa-c4f9739';
+var ARQUIVOS = ['./', 'dados.json', 'manifest.webmanifest', 'assets/favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
   'css/tokens.css', 'css/base.css', 'css/app.css',
-  'js/util.js', 'js/cripto.js', 'js/sync-nucleo.js', 'js/sync.js', 'js/sincronizar.js', 'js/bloqueio.js', 'js/icons.js', 'js/store.js', 'js/dominio.js', 'js/clima.js', 'js/ics.js', 'js/financeiro.js', 'js/financas-ui.js', 'js/lembretes.js', 'js/cartoes-calc.js', 'js/fatura-parser.js', 'js/graficos.js', 'js/pdf-importar.js', 'js/cartoes.js', 'js/nav.js', 'js/energia.js', 'js/telas.js', 'js/gerenciar.js', 'js/app.js'];
+  'js/util.js', 'js/cripto.js', 'js/sync-nucleo.js', 'js/sync.js', 'js/sincronizar.js', 'js/bloqueio.js', 'js/portal.js', 'js/icons.js', 'js/store.js', 'js/dominio.js', 'js/clima.js', 'js/ics.js', 'js/financeiro.js', 'js/financas-ui.js', 'js/lembretes.js', 'js/cartoes-calc.js', 'js/fatura-parser.js', 'js/graficos.js', 'js/pdf-importar.js', 'js/cartoes.js', 'js/nav.js', 'js/energia.js', 'js/telas.js', 'js/gerenciar.js', 'js/app.js'];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(VERSAO).then(function (c) { return c.addAll(ARQUIVOS); }).then(function () { return self.skipWaiting(); }));
+  /* pré-carrega a casca; NÃO guarda resposta redirecionada/de erro (ex.: tela de login quando a sessão expirou) */
+  e.waitUntil(caches.open(VERSAO).then(function (c) {
+    return Promise.all(ARQUIVOS.map(function (u) { return fetch(u, { cache: 'reload', credentials: 'same-origin' }).then(function (r) { if (r.ok && !r.redirected) return c.put(u, r); throw new Error('sem cache: ' + u); }); }));
+  }).then(function () { return self.skipWaiting(); }));
+});
+/* sair da conta: o app pede para apagar tudo que a casa guardou em cache */
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.tipo === 'limpar-cache') e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== VERSAO; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
@@ -13,13 +20,12 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var r = e.request;
   if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;   /* clima etc. vão direto à rede */
-  if (/\.apk$/i.test(r.url)) return;
   e.respondWith(new Promise(function (ok) {
     var passou = false;
     var t = setTimeout(function () { caches.match(r, { ignoreSearch: true }).then(function (c) { if (c && !passou) { passou = true; ok(c); } }); }, 4000);
     fetch(r).then(function (resp) {
       clearTimeout(t);
-      if (resp && resp.ok) { var cp = resp.clone(); caches.open(VERSAO).then(function (c) { c.put(r, cp); }); }
+      if (resp && resp.ok && !resp.redirected && !/\/(login|primeiro-acesso|conta)(\/|$)/.test(new URL(resp.url || r.url).pathname)) { var cp = resp.clone(); caches.open(VERSAO).then(function (c) { c.put(r, cp); }); }
       if (!passou) { passou = true; ok(resp); }
     }, function () {
       clearTimeout(t);

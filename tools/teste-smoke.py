@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Teste de fumaça do Painel da Sala (Playwright + Chrome headless). Opcional, só para desenvolvimento.
-Uso:  python3 tools/teste-smoke.py [--url https://.../painel-sala/] [--chrome /usr/bin/google-chrome] [--prints docs/prints]
+"""Teste de fumaça do Minha Casa em Ordem (Playwright + Chrome headless). Opcional, só para desenvolvimento.
+Uso:  python3 tools/teste-smoke.py [--url https://.../minha-casa-em-ordem/] [--chrome /usr/bin/google-chrome] [--prints PASTA]
 Sem --url, sobe um servidor local temporário. Sai com código 1 se algo falhar."""
 import argparse, functools, http.server, json, pathlib, socketserver, sys, threading, tempfile
 from playwright.sync_api import sync_playwright
 
 raiz = pathlib.Path(__file__).resolve().parent.parent
 ap = argparse.ArgumentParser()
-ap.add_argument('--url'); ap.add_argument('--chrome'); ap.add_argument('--prints', default=str(raiz / 'docs' / 'prints'))
+ap.add_argument('--url'); ap.add_argument('--chrome'); ap.add_argument('--prints', default='/tmp/prints-smoke')
 a = ap.parse_args()
 
 httpd = None
@@ -23,7 +23,7 @@ falhas, ok = [], []
 def check(cond, msg):
     (ok if cond else falhas).append(msg); print(('  ok   ' if cond else '  FALHA ') + msg)
 
-ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'cartoes', 'relaxar', 'gerenciar', 'gerenciar/habitos', 'gerenciar/tarefas', 'gerenciar/agenda', 'gerenciar/familia', 'gerenciar/links', 'gerenciar/sync', 'gerenciar/backup', 'sincronizar', 'teclas', 'instalar']
+ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'cartoes', 'relaxar', 'gerenciar', 'gerenciar/habitos', 'gerenciar/tarefas', 'gerenciar/agenda', 'gerenciar/familia', 'gerenciar/links', 'gerenciar/sync', 'gerenciar/backup', 'sincronizar', 'instalar']
 NOMES = {'': 'hoje'}
 
 def novo_ctx(b, w, h, **kw):
@@ -94,7 +94,7 @@ with sync_playwright() as p:
         pg.click('text=Exportar JSON')
     arq = pathlib.Path(tempfile.mkdtemp()) / 'backup.json'; dl.value.save_as(str(arq))
     bk = json.loads(arq.read_text())
-    check(bk.get('app') == 'painel-sala' and len(bk['dados']['habitos']) >= 1, 'exportar JSON baixa backup válido')
+    check(bk.get('app') == 'minha-casa-em-ordem' and len(bk['dados']['habitos']) >= 1, 'exportar JSON baixa backup válido')
     # alterar e importar de volta
     pg.evaluate("PS.store.alterar(function(s){ s.habitos = []; s.tarefas = []; }, true)")
     with pg.expect_file_chooser() as fc:
@@ -128,7 +128,7 @@ with sync_playwright() as p:
     check(pg.evaluate("PS.store.get().compromissos.some(function(c){return c.titulo==='Evento ICS'&&c.fonte==='ics'})"), 'importar .ics cria compromisso')
     # SW + manifest
     mf = pg.evaluate("fetch('manifest.webmanifest').then(function(r){return r.json()})")
-    check(mf['display'] == 'fullscreen' and len(mf['icons']) >= 3, 'manifest ok')
+    check(mf['display'] == 'standalone' and len(mf['icons']) >= 3, 'manifest ok')
     check(not erros, 'sem erros de console no fluxo %s' % erros[:3])
     ctx.close()
 

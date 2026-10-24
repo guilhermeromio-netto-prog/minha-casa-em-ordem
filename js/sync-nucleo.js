@@ -1,4 +1,4 @@
-/* Painel da Sala — núcleo da sincronização (puro: sem DOM, sem rede própria). Testado em Node (tools/teste-unidade.js).
+/* Minha Casa em Ordem — núcleo da sincronização (puro: sem DOM, sem rede própria). Testado em Node (tools/teste-unidade.js).
    Regra de conflito = a mesma do servidor: vence o maior carimbo `t`; empate: exclusão vence; depois o maior texto cifrado. */
 (function (raiz, fabrica) {
   if (typeof module === 'object' && module.exports) module.exports = fabrica();

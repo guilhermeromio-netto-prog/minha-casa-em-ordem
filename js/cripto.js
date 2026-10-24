@@ -1,4 +1,4 @@
-/* Painel da Sala — criptografia ponta a ponta (WebCrypto). Sem dependências.
+/* Minha Casa em Ordem — criptografia ponta a ponta (WebCrypto). Sem dependências.
    Modelo: uma chave-mestra aleatória (64 bytes: 32 AES-GCM + 32 HMAC) cifra cada item; ela fica "embrulhada" em dois envelopes:
    (1) pela chave derivada da SENHA DA FAMÍLIA (PBKDF2-SHA256, >= 300 mil iterações, sal aleatório) e
    (2) pela CHAVE DE RECUPERAÇÃO (aleatória, mostrada uma única vez). O servidor guarda só os envelopes (opacos).

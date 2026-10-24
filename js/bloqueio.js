@@ -1,5 +1,5 @@
 /* Bloqueio opcional do painel por PIN, só neste aparelho (privacidade de tela). Não é criptografia: os dados locais continuam no navegador.
-   Desligado por padrão (na TV ninguém precisa); recomendado em celulares. Trava após inatividade e ao abrir o app. */
+   Desligado por padrão; recomendado se o celular for compartilhado. Trava após inatividade e ao abrir o app. */
 (function (g) {
   'use strict';
   var PS = g.PS = g.PS || {};
@@ -28,7 +28,7 @@
         else { erros++; esperaAte = Date.now() + Math.min(30000, erros * 2000); msg.textContent = 'PIN incorreto.' + (erros > 2 ? ' Aguarde ' + Math.min(30, erros * 2) + ' s.' : ''); PS.ui.teclado && null; }
       });
     } });
-    el = h('div', { class: 'modal bloqueio-tela', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Painel bloqueado' }, h('div', { class: 'modal-caixa' }, h('h2', null, 'Painel da Sala · bloqueado'), msg, tk));
+    el = h('div', { class: 'modal bloqueio-tela', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Painel bloqueado' }, h('div', { class: 'modal-caixa' }, h('h2', null, 'Minha Casa em Ordem · bloqueado'), msg, tk));
     var ant = document.querySelector('.modal'); if (ant && ant.parentNode) ant.parentNode.removeChild(ant);
     document.body.appendChild(el);
     var t5 = el.querySelector('[data-fid="tk:5"]'); if (t5) PS.nav.focar(t5);

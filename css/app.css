@@ -1,4 +1,4 @@
-/* Painel da Sala — componentes e telas */
+/* Minha Casa em Ordem — componentes e telas */
 .coluna { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
 .cartao { background: var(--c-superficie); border-radius: var(--raio-g); padding: .6rem .75rem .65rem; min-width: 0; }
 html.contraste .cartao { border: 2px solid #fff; }

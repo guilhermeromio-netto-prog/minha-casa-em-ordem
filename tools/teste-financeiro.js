@@ -101,7 +101,7 @@ t('.ics válido: CRLF, BEGIN/END pareados, VALARM por antecedência, escape e do
   ics.split('\r\n').forEach(function (l) { assert.ok(Buffer.byteLength(l) <= 75, 'linha longa: ' + l.length); });
   assert.ok(ics.indexOf('DTSTART;VALUE=DATE:20261015') >= 0 && ics.indexOf('DTEND;VALUE=DATE:20261016') >= 0);
   assert.ok(ics.indexOf('TRIGGER:-P2DT15H') >= 0 && ics.indexOf('TRIGGER:PT9H') >= 0 && ics.indexOf('TRIGGER:-P0DT15H') >= 0);
-  assert.ok(/UID:[A-Za-z0-9_.@-]+@painel-sala/.test(ics)); assert.ok(ics.indexOf('DTSTAMP:20261010T120000Z') >= 0);
+  assert.ok(/UID:[A-Za-z0-9_.@-]+@minha-casa-em-ordem/.test(ics)); assert.ok(ics.indexOf('DTSTAMP:20261010T120000Z') >= 0);
   var un = ics.replace(/\r\n /g, ''); assert.ok(un.indexOf('Condomínio\\, bloco\\; A\\\\B') >= 0);
   assert.ok(ics.indexOf('não confirma pagamento') >= 0);
 });

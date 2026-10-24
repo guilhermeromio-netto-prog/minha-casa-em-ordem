@@ -17,7 +17,7 @@
   var PRIORIDADES = ['alta', 'media', 'baixa'];
 
   function vazio() {
-    return { app: 'painel-sala', versao: VERSAO, config: copia(PADRAO_CONFIG), habitos: [], listas: ['Casa', 'Trabalho', 'Maria Alice'], tarefas: [], compromissos: [], lembretes: [], contas: [], links: [], foco: [], cartoes: [], faturas: [], lancs: [], regras: [], radios: [], passeios: [], programa: [], checks: {} };
+    return { app: 'minha-casa-em-ordem', versao: VERSAO, config: copia(PADRAO_CONFIG), habitos: [], listas: ['Casa', 'Trabalho', 'Maria Alice'], tarefas: [], compromissos: [], lembretes: [], contas: [], links: [], foco: [], cartoes: [], faturas: [], lancs: [], regras: [], radios: [], passeios: [], programa: [], checks: {} };
   }
   function copia(o) { return JSON.parse(JSON.stringify(o)); }
   function str(v, n) { return U.limitar(v == null ? '' : String(v).replace(/[\u0000-\u001f]/g, ' '), n || 120).trim(); }
@@ -214,12 +214,12 @@
       var s = estado; return ['habitos', 'tarefas', 'compromissos', 'lembretes', 'contas', 'links', 'foco'].some(function (k) { return s[k].some(function (x) { return x.exemplo; }); });
     },
     /* ---- backup JSON ---- */
-    exportarJSON: function () { return JSON.stringify({ app: 'painel-sala', versao: VERSAO, exportadoEm: new Date().toISOString(), dados: estado }, null, 2); },
+    exportarJSON: function () { return JSON.stringify({ app: 'minha-casa-em-ordem', versao: VERSAO, exportadoEm: new Date().toISOString(), dados: estado }, null, 2); },
     lerBackup: function (texto) {
       var o = JSON.parse(texto);
       if (!o || typeof o !== 'object') throw new Error('Arquivo inválido');
       var d = o.dados || o;
-      if (o.app && o.app !== 'painel-sala') throw new Error('Este arquivo não é do Painel da Sala');
+      if (o.app && o.app !== 'minha-casa-em-ordem' && o.app !== 'painel-sala') throw new Error('Este arquivo não é do Minha Casa em Ordem');
       if ((o.versao || d.versao || 1) > VERSAO) throw new Error('Backup de uma versão mais nova do app');
       return d;
     },

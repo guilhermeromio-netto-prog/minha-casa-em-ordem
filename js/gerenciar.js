@@ -1,4 +1,4 @@
-/* Página de gerenciamento (celular/TV): edita tudo, backup JSON, link de configuração, importar .ics. */
+/* Página de gerenciamento (celular): edita tudo, backup JSON, link de configuração, importar .ics. */
 (function (g) {
   'use strict';
   var PS = g.PS = g.PS || {};
@@ -129,10 +129,9 @@
           h('label', { class: 'campo' }, h('span', null, 'Tamanho da letra'), sel('fonte', [['1', 'Normal'], ['2', 'Grande'], ['3', 'Enorme']], Number)),
           h('label', { class: 'campo' }, h('span', null, 'Escurecer após inatividade'), sel('escurecerMin', [['0', 'Nunca'], ['5', '5 minutos'], ['10', '10 minutos'], ['20', '20 minutos'], ['30', '30 minutos']], Number)),
           h('label', { class: 'campo marcar' }, chk('contraste'), h('span', null, 'Tema de alto contraste')),
-          h('label', { class: 'campo marcar' }, chk('noiteAuto'), h('span', null, 'Modo noite automático (22h–6h)'))),
-          h('p', { class: 'nota' }, 'O painel também desloca o desenho alguns pixels a cada 3 minutos para proteger a tela da TV.')),
-        h('div', { class: 'form-linha' }, h('p', { class: 'nota' }, 'Teste o controle remoto e instale o app:'), h('div', { class: 'acoes', style: 'margin-top:.2rem' },
-          h('a', { class: 'btn', href: '#/teclas' }, 'Testar teclas do controle'), h('a', { class: 'btn', href: '#/instalar' }, 'Instalar na TV box'))));
+          h('label', { class: 'campo marcar' }, chk('noiteAuto'), h('span', null, 'Modo noite automático (22h–6h)')))),
+        h('div', { class: 'form-linha' }, h('p', { class: 'nota' }, 'Instale como app no celular:'), h('div', { class: 'acoes', style: 'margin-top:.2rem' },
+          h('a', { class: 'btn', href: '#/instalar' }, 'Instalar no celular'))));
     },
     habitos: function () {
       return editor({ colecao: 'habitos', rotuloAdd: 'Novo hábito', novo: function () { return { id: U.uid(), nome: '', icone: 'check' }; },
@@ -210,7 +209,7 @@
       ml.addEventListener('change', function () { PS.bloqueio.definirMinutos(Math.min(60, Math.max(1, Math.round(Number(ml.value)) || 5))); });
       var pinI = h('input', { type: 'password', inputmode: 'numeric', maxlength: '8', autocomplete: 'off', placeholder: '4 a 8 números', 'data-fid': 'gs:pin' });
       w.appendChild(h('div', { class: 'form-linha' }, h('h3', null, 'Bloqueio do painel neste aparelho'),
-        h('p', { class: 'nota' }, 'PIN opcional que tranca a tela depois de um tempo parado e ao abrir o app. Recomendado nos celulares; na TV costuma ficar desligado. É só privacidade de tela (não substitui a senha da família).'),
+        h('p', { class: 'nota' }, 'PIN opcional que tranca a tela depois de um tempo parado e ao abrir o app. Recomendado se o celular for compartilhado. É só privacidade de tela (não substitui a senha da família).'),
         h('p', { class: 'nota' }, PS.bloqueio.ativo() ? 'Ligado: trava após ' + PS.bloqueio.minutos() + ' min sem uso.' : 'Desligado neste aparelho.'),
         h('div', { class: 'campos' }, h('label', { class: 'campo' }, h('span', null, 'PIN do aparelho'), pinI), h('label', { class: 'campo' }, h('span', null, 'Travar após (minutos)'), ml)),
         h('div', { class: 'acoes' },
@@ -233,7 +232,7 @@
       return h('div', null,
         h('div', { class: 'form-linha' }, h('h3', null, 'Backup em arquivo (JSON)'), h('p', { class: 'nota' }, 'Guarda tudo, inclusive o histórico de hábitos.'),
           h('div', { class: 'acoes' },
-            h('button', { class: 'btn primario', type: 'button', onclick: function () { baixar('painel-sala-backup-' + U.hoje() + '.json', S.exportarJSON(), 'application/json'); PS.aviso('Backup baixado'); } }, 'Exportar JSON'),
+            h('button', { class: 'btn primario', type: 'button', onclick: function () { baixar('minha-casa-backup-' + U.hoje() + '.json', S.exportarJSON(), 'application/json'); PS.aviso('Backup baixado'); } }, 'Exportar JSON'),
             h('button', { class: 'btn', type: 'button', onclick: function () {
               lerArquivo('.json,application/json', function (txt) {
                 var d; try { d = S.lerBackup(txt); } catch (e) { PS.aviso('Backup inválido: ' + e.message); return; }
@@ -241,9 +240,9 @@
               });
             } }, 'Importar JSON'))),
         h('div', { class: 'form-linha' }, h('h3', null, 'Link de configuração'),
-          h('p', { class: 'nota' }, 'Configure no celular e gere um link com tudo (sem servidor: os dados vão dentro do endereço, depois do #). Abra o mesmo link no navegador da TV box. Não inclui histórico de hábitos nem tarefas concluídas. Limite prático: ~2.000 caracteres em apps de mensagem; se passar, use o arquivo JSON.'),
+          h('p', { class: 'nota' }, 'Configure no celular e gere um link com tudo (sem servidor: os dados vão dentro do endereço, depois do #). Abra o mesmo link no outro celular. Não inclui histórico de hábitos nem tarefas concluídas. Limite prático: ~2.000 caracteres em apps de mensagem; se passar, use o arquivo JSON.'),
           h('div', { class: 'acoes' }, h('button', { class: 'btn primario', type: 'button', onclick: gerar }, 'Gerar link agora')), saida),
-        h('div', { class: 'form-linha' }, h('h3', null, 'Sincronizar na nuvem'), h('p', { class: 'nota' }, 'TV e celulares com os mesmos dados, cifrados no aparelho. Veja a aba Sincronização.'), h('div', { class: 'acoes' }, h('a', { class: 'btn', href: '#/sincronizar', 'data-fid': 'gb:sync' }, 'Abrir sincronização'))),
+        h('div', { class: 'form-linha' }, h('h3', null, 'Sincronizar na nuvem'), h('p', { class: 'nota' }, 'Os celulares da família com os mesmos dados, cifrados no aparelho. Veja a aba Sincronização.'), h('div', { class: 'acoes' }, h('a', { class: 'btn', href: '#/sincronizar', 'data-fid': 'gb:sync' }, 'Abrir sincronização'))),
         h('div', { class: 'form-linha' }, h('h3', null, 'Dados de exemplo e reinício'),
           h('div', { class: 'acoes' },
             h('button', { class: 'btn', type: 'button', onclick: function () { if (!S.temExemplos()) { PS.aviso('Não há itens de exemplo'); return; } S.limparExemplos(); PS.aviso('Exemplos removidos'); } }, 'Remover itens de exemplo'),

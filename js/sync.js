@@ -1,4 +1,4 @@
-/* Painel da Sala — sincronização na nuvem (navegador). Criptografia ponta a ponta: o servidor só vê texto cifrado.
+/* Minha Casa em Ordem — sincronização na nuvem (navegador). Criptografia ponta a ponta: o servidor só vê texto cifrado.
    Depende de PS.cripto, PS.nucleo e PS.store. Nunca registra PIN, senha, chave ou token em log. */
 (function (g) {
   'use strict';
@@ -18,7 +18,7 @@
 
   function rotuloAparelho() {
     var ua = (g.navigator && navigator.userAgent) || '';
-    if (/Android.*(TV|BRAVIA|AFTMM|AFTT|SmartTV)/i.test(ua) || /(Tizen|Web0S|SMART-TV|AndroidTV)/i.test(ua)) return 'TV da sala';
+    if (/Android.*(TV|BRAVIA|AFTMM|AFTT|SmartTV)/i.test(ua) || /(Tizen|Web0S|SMART-TV|AndroidTV)/i.test(ua)) return 'Celular';
     if (/iPhone|iPad/i.test(ua)) return 'iPhone/iPad';
     if (/Android/i.test(ua)) return 'Celular Android';
     return 'Computador';
@@ -209,12 +209,12 @@
         var l = locais[k]; return C.idOpaco(chaves, l.c, l.i).then(function (op) { return C.cifrar(chaves, l.c, op, { i: l.i, d: l.d }).then(function (d) { out.push({ c: l.c, i: op, d: d }); }); });
       });
     }, Promise.resolve()).then(function () {
-      return JSON.stringify({ formato: 'painel-sala-backup-cifrado', versao: 1, criado_em: new Date().toISOString(), salt: cfg.salt, env_senha: cfg.env_senha, env_rec: cfg.env_rec, itens: out });
+      return JSON.stringify({ formato: 'minha-casa-backup-cifrado', versao: 1, criado_em: new Date().toISOString(), salt: cfg.salt, env_senha: cfg.env_senha, env_rec: cfg.env_rec, itens: out });
     });
   }
   function lerBackupCifrado(texto, segredo, usaRec) {
     var o; try { o = JSON.parse(texto); } catch (e) { return Promise.reject(new Error('Arquivo inválido.')); }
-    if (!o || o.formato !== 'painel-sala-backup-cifrado' || !Array.isArray(o.itens)) return Promise.reject(new Error('Este arquivo não é um backup cifrado do Painel da Sala.'));
+    if (!o || (o.formato !== 'minha-casa-backup-cifrado' && o.formato !== 'painel-sala-backup-cifrado') || !Array.isArray(o.itens)) return Promise.reject(new Error('Este arquivo não é um backup cifrado do Minha Casa em Ordem.'));
     var abre = usaRec ? C.abrirComRecuperacao(segredo, o.salt, o.env_rec) : C.abrirComSenha(segredo, o.salt, o.env_senha);
     return abre.then(function (k) {
       var novo = S.sanear({}); novo.checks = {}; var tem = {};

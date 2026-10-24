@@ -1,5 +1,5 @@
 {
- "app": "painel-sala",
+ "app": "minha-casa-em-ordem",
  "versao": 2,
  "_comentario": "Dados de EXEMPLO. Tudo aqui aparece marcado como 'exemplo' no painel e pode ser editado ou removido em Gerenciar. 'dias' = dias a partir de hoje (o app converte em datas reais no primeiro uso).",
  "config": {

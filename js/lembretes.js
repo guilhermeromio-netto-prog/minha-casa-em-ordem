@@ -75,8 +75,8 @@
 
   function textoHonesto() {
     var s = suporte();
-    return 'O que funciona: com o painel ABERTO (TV ou celular) os avisos aparecem na tela "Atenção agora"' + (s.notif ? ' e, se você ativar, como notificação do sistema' : '') + '. ' +
-      'Com o app FECHADO: no Android com o painel instalado pelo Chrome, o aviso só chega se o Chrome liberar a sincronização periódica em segundo plano — o Android decide o horário e pode atrasar ou não rodar. No iPhone e no app da TV (APK) não há aviso com o app fechado. ' +
+    return 'O que funciona: com o app ABERTO no celular os avisos aparecem na tela "Atenção agora"' + (s.notif ? ' e, se você ativar, como notificação do sistema' : '') + '. ' +
+      'Com o app FECHADO: no Android com o painel instalado pelo Chrome, o aviso só chega se o Chrome liberar a sincronização periódica em segundo plano — o Android decide o horário e pode atrasar ou não rodar. No iPhone não há aviso com o app fechado. ' +
       'O jeito confiável é "Adicionar ao calendário (.ics)": o alarme fica no calendário do celular e toca mesmo com o painel fechado. Nada disso paga ou confirma pagamento.';
   }
 

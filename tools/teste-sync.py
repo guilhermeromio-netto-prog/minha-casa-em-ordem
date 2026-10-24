@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Teste de sincronização com DOIS perfis de navegador falando com o Worker REAL (cifrado de ponta a ponta).
-Uso: python3 tools/teste-sync.py [--url https://.../painel-sala/] [--chrome /usr/bin/google-chrome] [--manter]
+Uso: python3 tools/teste-sync.py [--url https://.../minha-casa-em-ordem/] [--chrome /usr/bin/google-chrome] [--manter]
  - Sem --url: servidor local + proxy do Playwright que injeta o Origin permitido (o Worker só aceita github.io).
  - Cria uma família DESCARTÁVEL e a exclui ao final (use --manter para inspecionar o D1 antes; imprime o código).
 Sai com 1 se algo falhar."""

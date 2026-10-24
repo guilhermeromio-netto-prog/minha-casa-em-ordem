@@ -1,4 +1,4 @@
-/* Tela #/sincronizar: criar a família, entrar com código + PIN + senha, e gerenciar a conexão. Teclado numérico para controle remoto. */
+/* Tela #/sincronizar: criar a família, entrar com código + PIN + senha, e gerenciar a conexão. Teclado numérico na tela. */
 (function (g) {
   'use strict';
   var PS = g.PS = g.PS || {};
@@ -62,13 +62,13 @@
     if (!PS.cripto || !PS.cripto.disponivel) return h('div', { class: 'cartao' }, h('h2', null, 'Criptografia indisponível'), h('p', { class: 'nota aviso' }, 'Este navegador não oferece WebCrypto (precisa de https). A sincronização protegida não pode ser usada aqui; o painel continua funcionando só neste aparelho.'));
     return h('div', null,
       h('div', { class: 'cartao' }, h('h2', null, 'Compartilhar com a família'),
-        h('p', { class: 'nota' }, 'Mantém TV, seu celular e o celular da sua esposa com os MESMOS dados. Tudo é cifrado neste aparelho antes de sair: o servidor guarda só texto ilegível.'),
+        h('p', { class: 'nota' }, 'Mantém o seu celular e o celular da sua esposa com os MESMOS dados. Tudo é cifrado neste aparelho antes de sair: o servidor guarda só texto ilegível.'),
         h('p', { class: 'nota' }, 'São três segredos diferentes: o ', h('b', null, 'código da família'), ' (8 números, identifica a família), o ', h('b', null, 'PIN'), ' (4 a 8 números, deixa um aparelho entrar) e a ', h('b', null, 'senha da família'), ' (cifra os dados; o servidor nunca a recebe).'),
         h('p', { class: 'nota aviso' }, 'Se perder a senha E a chave de recuperação, ninguém consegue recuperar os dados da nuvem — nem eu, nem a Cloudflare. Os dados deste aparelho continuam aqui.'),
         h('div', { class: 'acoes' },
           h('button', { class: 'btn primario', type: 'button', 'data-fid': 'sy:criar', onclick: function () { F = {}; ir('c-pin'); } }, 'Criar a família (primeiro aparelho)'),
           h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:entrar', onclick: function () { F = {}; ir('e-codigo'); } }, 'Entrar numa família que já existe'))),
-      h('p', { class: 'nota' }, 'Dica: crie a família no celular (teclado mais fácil) e entre na TV usando o código, o PIN e a senha.'));
+      h('p', { class: 'nota' }, 'Dica: crie a família no seu celular e entre no outro aparelho usando o código, o PIN e a senha.'));
   };
   function tituloPasso(t, sub) { return [h('h2', { class: 'passo-titulo' }, t), sub ? h('p', { class: 'nota' }, sub) : null]; }
   T['c-pin'] = function () {
@@ -108,7 +108,7 @@
       h('p', { class: 'nota' }, 'Para outro aparelho entrar: código + PIN + senha da família. Guarde a chave de recuperação num lugar seguro (papel, gerenciador de senhas): ela abre os dados se você esquecer a senha.'),
       h('p', { class: 'nota aviso' }, 'Perdendo a senha E a chave de recuperação, os dados da nuvem NÃO podem ser recuperados.'),
       F.guardou === false ? h('p', { class: 'nota aviso' }, 'Este navegador não guardou a chave de criptografia (modo privado?). Será preciso digitar a senha a cada abertura.') : null,
-      h('div', { class: 'acoes' }, h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:bkp0', onclick: function () { PS.sync.exportarCifrado().then(function (t) { PS.arq.baixar('painel-sala-backup-cifrado-' + U.hoje() + '.json', t, 'application/json'); PS.aviso('Backup cifrado baixado'); }, function (e) { PS.aviso(e.message); }); } }, 'Baixar backup cifrado agora')),
+      h('div', { class: 'acoes' }, h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:bkp0', onclick: function () { PS.sync.exportarCifrado().then(function (t) { PS.arq.baixar('minha-casa-backup-cifrado-' + U.hoje() + '.json', t, 'application/json'); PS.aviso('Backup cifrado baixado'); }, function (e) { PS.aviso(e.message); }); } }, 'Baixar backup cifrado agora')),
       h('label', { class: 'campo marcar' }, chk, h('span', null, 'Anotei o código e a chave de recuperação')), h('div', { class: 'acoes' }, bt));
   };
   T['e-codigo'] = function () {
@@ -229,7 +229,7 @@
       h('div', { class: 'cartao' }, h('h2', null, 'Aparelhos conectados'), aps, h('div', { class: 'acoes' }, h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:aps', onclick: listar }, 'Ver aparelhos'))),
       h('div', { class: 'cartao' }, h('h2', null, 'Segurança e backup'),
         h('div', { class: 'acoes' },
-          h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:bkp', onclick: function () { PS.sync.exportarCifrado().then(function (t) { PS.arq.baixar('painel-sala-backup-cifrado-' + U.hoje() + '.json', t, 'application/json'); PS.aviso('Backup cifrado baixado'); }, function (er) { PS.aviso(er.message); }); } }, 'Baixar backup cifrado'),
+          h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:bkp', onclick: function () { PS.sync.exportarCifrado().then(function (t) { PS.arq.baixar('minha-casa-backup-cifrado-' + U.hoje() + '.json', t, 'application/json'); PS.aviso('Backup cifrado baixado'); }, function (er) { PS.aviso(er.message); }); } }, 'Baixar backup cifrado'),
           h('button', { class: 'btn', type: 'button', 'data-fid': 'sy:rest', onclick: function () { ir('importarCif'); } }, 'Restaurar backup cifrado'),
           h('button', { class: 'btn', type: 'button', onclick: function () { ir('pinNovo'); } }, 'Trocar PIN'),
           h('button', { class: 'btn', type: 'button', onclick: function () { ir('senhaNova'); } }, 'Trocar senha da família'),
