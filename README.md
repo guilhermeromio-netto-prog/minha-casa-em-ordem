@@ -56,7 +56,7 @@ tools/versionar.sh                          # antes de publicar: carimba ?v=<has
 bash tools/montar-dist.sh                   # dist/ só com os arquivos do app (Pages e Cloudflare usam isso)
 ```
 
-Publicação: push em `main` publica o GitHub Pages (`dist/`). O app com login na Cloudflare é publicado por `tools/gerar-deploy-cloudflare.py` (veja `docs/CLOUDFLARE.md`; ainda **não** é automático a cada push).
+Publicação: push em `main` publica o GitHub Pages (raiz do repositório; o token usado não tinha escopo `workflow`, então o workflow não foi alterado). O app com login na Cloudflare é publicado por `tools/gerar-deploy-cloudflare.py` (veja `docs/CLOUDFLARE.md`; ainda **não** é automático a cada push).
 
 ## Limitações conhecidas
 

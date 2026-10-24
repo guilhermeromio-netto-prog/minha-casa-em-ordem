@@ -31,7 +31,7 @@ Para cada item: novo arquivo em `js/`, view em `PS.views` (depois de `telas.js`)
 - [ ] Sincronizar entre dois celulares (senha da família ≠ senha do login).
 
 ## 5. Publicar
-- **GitHub Pages:** push em `main`; o workflow monta `dist/` (`tools/montar-dist.sh`) e publica. Rode antes `tools/versionar.sh`.
+- **GitHub Pages:** push em `main`; o workflow publica a raiz do repositório. Rode antes `tools/versionar.sh`.
 - **Cloudflare (com login):** `bash tools/montar-dist.sh && python3 tools/gerar-deploy-cloudflare.py ...` e execute o arquivo gerado (veja `docs/CLOUDFLARE.md`).
 
 byGui
