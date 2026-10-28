@@ -62,12 +62,6 @@
       return h('button', { class: 'item', type: 'button', 'data-fid': 'tr:' + t.id, onclick: function () { S.alterar(function (st) { st.tarefas.forEach(function (x) { if (x.id === t.id) x.feita = true; }); }); } },
         caixa(false), h('span', { class: 't' }, t.titulo, nada()));
     });
-    var feitosHoje = s.habitos.filter(function (x) { return S.habitoFeito(x.id, hoje); }).length, totH = s.habitos.length;
-    var pct = totH ? Math.round(feitosHoje * 100 / totH) : 0;
-    var chips = s.habitos.slice(0, 4).map(function (x) {
-      var on = S.habitoFeito(x.id, hoje);
-      return h('button', { class: 'item' + (on ? ' feito' : ''), type: 'button', 'data-fid': 'hb:' + x.id, 'aria-pressed': on ? 'true' : 'false', onclick: function () { S.alternarHabito(x.id, hoje); } }, caixa(on), h('span', { class: 't' }, x.nome));
-    });
     var frase = D.fraseDoDia(s, hoje);
 
     return h('div', { class: 'hoje-wrap' }, PS.finUI.atencao(s, hoje, 2), h('div', { class: 'hoje' },
@@ -78,10 +72,6 @@
         cartao('Compromissos', 'calendario', listaComp.length ? listaComp : h('p', { class: 'vazio' }, 'Nada marcado nos próximos 7 dias.'), nComp > 3 ? '+' + (nComp - 3) : null),
         cartao('Tarefas do dia', 'lista', listaT.length ? listaT : h('p', { class: 'vazio' }, 'Nenhuma tarefa para hoje. Tudo em dia!'), nT > 2 ? '+' + (nT - 2) : null)),
       h('div', { class: 'coluna' },
-        cartao('Hábitos de hoje', 'chama', totH ? [
-          h('div', { class: 'progresso-txt' }, h('strong', null, feitosHoje + '/' + totH), h('span', null, pct + '% do dia')),
-          h('div', { class: 'barra', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, h('i', { style: 'width:' + pct + '%' })),
-          h('div', { class: 'chips-habitos' }, chips)] : h('p', { class: 'vazio' }, 'Cadastre hábitos em Gerenciar.')),
         frase ? cartao('Foco do dia', 'alvo', h('p', { class: 'foco' }, frase)) : null)));
   } };
 
@@ -132,20 +122,42 @@
   function detalheCompromisso(c) {
     PS.modal.abrir(c.titulo, h('div', null, h('p', null, U.dataLonga(c.data) + (c.hora ? ' às ' + c.hora : ' (dia todo)')), c.local ? h('p', null, 'Local: ' + c.local) : null, c.fonte === 'ics' ? h('p', { class: 'nota' }, 'Importado de arquivo .ics') : null), [{ rotulo: 'Fechar', tipo: 'primario' }]);
   }
+  var calMes = null, calSel = null; /* mes mostrado (AAAA-MM) e dia selecionado */
   views.agenda = { reativo: true, titulo: 'Agenda', render: function () {
-    var s = S.get(), ag = U.agora(), hoje = ag.iso, grupos = [];
-    for (var i = 0; i < 7; i++) {
-      var d = U.somaDias(hoje, i), evs = D.ordenarCompromissos(s.compromissos.filter(function (c) { return c.data === d; }));
-      var rel = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : null;
-      grupos.push(h('section', { class: 'dia-agenda' },
-        h('h3', null, rel ? rel : U.DIAS[U.dowIso(d)], h('small', null, U.dataCurta(d).split(', ')[1])),
-        evs.length ? evs.map(function (c) {
-          var passou = c.data === hoje && c.hora && (+c.hora.slice(0, 2) * 60 + +c.hora.slice(3)) < ag.h * 60 + ag.mi - 30;
-          return h('button', { class: 'item' + (passou ? ' passado' : ''), type: 'button', 'data-fid': 'cp:' + c.id, onclick: function () { detalheCompromisso(c); } },
-            h('span', { class: 'hora' }, c.hora || 'Dia todo'), h('span', { class: 't' }, c.titulo, tagExemplo(c)), c.local ? h('span', { class: 'meta' }, [I('pin'), ' ' + c.local]) : null);
-        }) : h('p', { class: 'vazio' }, 'Sem compromissos')));
+    var s = S.get(), ag = U.agora(), hoje = ag.iso;
+    if (!calMes) calMes = U.ym(hoje);
+    if (!calSel) calSel = hoje;
+    var y = +calMes.slice(0, 4), m = +calMes.slice(5, 7), nDias = U.diasNoMes(y, m);
+    var primeiro = calMes + '-01', desloc = U.dowIso(primeiro); /* 0 = domingo */
+    var porDia = {};
+    s.compromissos.forEach(function (c) { if (c.data && c.data.slice(0, 7) === calMes) (porDia[c.data] = porDia[c.data] || []).push(c); });
+    function ir(n) { calMes = U.somaMes(calMes, n); calSel = U.dataNoMes(calMes, +calSel.slice(8, 10)); PS.redesenhar(); }
+    var cab = U.DIAS_CURTOS.map(function (d) { return h('span', { class: 'cal-dow' }, d); });
+    var celulas = [];
+    for (var i = 0; i < desloc; i++) celulas.push(h('span', { class: 'cal-vazio', 'aria-hidden': 'true' }));
+    for (var dia = 1; dia <= nDias; dia++) {
+      (function (iso, dnum) {
+        var n = (porDia[iso] || []).length;
+        celulas.push(h('button', { class: 'cal-dia' + (iso === hoje ? ' hoje' : '') + (iso === calSel ? ' sel' : ''), type: 'button', 'data-fid': 'cd:' + iso, 'aria-pressed': iso === calSel ? 'true' : 'false',
+          'aria-label': U.dataLonga(iso) + (n ? ', ' + n + ' compromisso' + (n > 1 ? 's' : '') : ''), onclick: function () { calSel = iso; PS.redesenhar(); } },
+          h('span', { class: 'cal-num' }, String(dnum)), n ? h('span', { class: 'cal-pt' }, n > 1 ? String(n) : '') : null));
+      })(calMes + '-' + U.pad(dia), dia);
     }
-    return h('div', null, h('h1', { class: 'titulo-tela' }, 'Agenda', h('small', null, 'próximos 7 dias')), grupos,
+    var evs = D.ordenarCompromissos(porDia[calSel] || []);
+    var lista = evs.length ? evs.map(function (c) {
+      var passou = c.data === hoje && c.hora && (+c.hora.slice(0, 2) * 60 + +c.hora.slice(3)) < ag.h * 60 + ag.mi - 30;
+      return h('button', { class: 'item' + (passou ? ' passado' : ''), type: 'button', 'data-fid': 'cp:' + c.id, onclick: function () { detalheCompromisso(c); } },
+        h('span', { class: 'hora' }, c.hora || 'Dia todo'), h('span', { class: 't' }, c.titulo, tagExemplo(c)), c.local ? h('span', { class: 'meta' }, [I('pin'), ' ' + c.local]) : null);
+    }) : h('p', { class: 'vazio' }, 'Sem compromissos neste dia');
+    return h('div', null,
+      h('h1', { class: 'titulo-tela' }, 'Agenda', h('small', null, 'mês inteiro')),
+      h('div', { class: 'cal-nav' },
+        h('button', { class: 'btn', type: 'button', 'data-fid': 'cal-ant', 'aria-label': 'Mês anterior', onclick: function () { ir(-1); } }, '‹'),
+        h('strong', null, cap(U.MESES[m - 1]) + ' ' + y),
+        h('button', { class: 'btn', type: 'button', 'data-fid': 'cal-hoje', onclick: function () { calMes = U.ym(hoje); calSel = hoje; PS.redesenhar(); } }, 'Hoje'),
+        h('button', { class: 'btn', type: 'button', 'data-fid': 'cal-prox', 'aria-label': 'Próximo mês', onclick: function () { ir(1); } }, '›')),
+      h('div', { class: 'cal-grade', role: 'group', 'aria-label': 'Calendário do mês' }, cab, celulas),
+      h('section', { class: 'dia-agenda' }, h('h3', null, cap(U.dataLonga(calSel))), lista),
       h('p', { class: 'nota' }, 'Para cadastrar ou importar um arquivo .ics, use Gerenciar → Agenda.'));
   } };
 

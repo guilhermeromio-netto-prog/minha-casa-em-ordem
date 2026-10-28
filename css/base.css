@@ -70,13 +70,23 @@ html.noite { --c-magenta-brilho: rgba(226, 0, 116, .3); }
   html { font-size: calc(17px * var(--escala)); }
   :root { --margem-x: 12px; --margem-y: 10px; }
   body { overflow: auto; }
-  #shell { height: auto; min-height: 100%; }
+  #shell { height: auto; min-height: 100%; transform: none; transition: opacity 2s ease; } /* sem deslocamento: ele prenderia o menu fixo ao fim da página */
   #app { overflow: visible; margin: 0; padding: .3rem 0; }
   .topo { flex-wrap: wrap; gap: .4rem; padding: 0 0 .4rem; }
-  .menu { margin-left: 0; justify-content: flex-start; }
-  .menu a { font-size: .82rem; padding: .5rem .6rem .6rem; }
+  /* Menu na parte de baixo da tela: fica ao alcance do polegar em celular grande e alto. */
+  #shell { padding-bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px)); }
+  .menu { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: .2rem; padding: .35rem var(--margem-x) calc(.35rem + env(safe-area-inset-bottom, 0px)); background: var(--c-superficie); border-top: 1px solid var(--c-linha); }
+  .menu a { font-size: .8rem; text-align: center; min-height: 2.5rem; display: flex; align-items: center; justify-content: center; padding: .3rem .2rem .5rem; }
+  .menu a[aria-current="page"] { background: var(--c-superficie-2); }
   .marca { font-size: 1rem; }
   .rodape { font-size: .72rem; }
+}
+/* iPhone no modo instalado (viewport-fit=cover): respeita a área segura
+   atrás do relógio (topo) e da barra inicial (base). Onde não há área
+   segura, env() vale zero e nada muda. */
+@supports (padding: env(safe-area-inset-top)) {
+  .topo { padding-top: env(safe-area-inset-top); }
+  .rodape { padding-bottom: env(safe-area-inset-bottom); }
 }
 .btn-rodape { display: inline-block; padding: .1rem .5rem; border-radius: var(--raio); color: var(--c-texto); font-weight: 700; text-decoration: underline; text-decoration-color: var(--c-magenta); text-underline-offset: .2rem; }
 .portal-conta { display: inline-flex; align-items: center; gap: .5rem; }

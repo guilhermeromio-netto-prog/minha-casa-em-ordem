@@ -384,3 +384,16 @@ textarea.entrada { min-height: 5rem; font-size: .6rem; font-family: ui-monospace
 /* selo curto ("20 d atraso") nas colunas estreitas da tela Hoje larga; texto completo no resto */
 .selo .cp { display: none; }
 @media (min-width: 761px) { .hoje-wrap .atencao-item .selo .lg { display: none; } .hoje-wrap .atencao-item .selo .cp { display: inline; } }
+
+/* Agenda: calendário do mês */
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-bottom: .5rem; }
+.cal-nav strong { flex: 1; text-align: center; font-size: .95rem; }
+.cal-grade { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .2rem; margin-bottom: .7rem; }
+.cal-dow { text-align: center; font-size: .62rem; font-weight: 800; color: var(--c-texto-2); text-transform: uppercase; padding: .15rem 0; }
+.cal-dia { position: relative; min-height: 2.6rem; border: 0; border-radius: var(--raio); background: var(--c-superficie); color: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem; }
+.cal-dia.hoje { box-shadow: inset 0 0 0 2px var(--c-magenta); }
+.cal-dia.sel { background: var(--c-superficie-2); box-shadow: inset 0 0 0 2px var(--c-texto); }
+.cal-dia.hoje.sel { box-shadow: inset 0 0 0 2px var(--c-magenta); }
+.cal-num { font-weight: 800; font-size: .85rem; }
+.cal-pt { min-width: .4rem; height: .4rem; border-radius: 99px; background: var(--c-magenta); font-size: .5rem; line-height: .4rem; }
+.cal-pt:not(:empty) { height: auto; padding: .05rem .25rem; line-height: 1; }
