@@ -397,3 +397,24 @@ textarea.entrada { min-height: 5rem; font-size: .6rem; font-family: ui-monospace
 .cal-num { font-weight: 800; font-size: .85rem; }
 .cal-pt { min-width: .4rem; height: .4rem; border-radius: 99px; background: var(--c-magenta); font-size: .5rem; line-height: .4rem; }
 .cal-pt:not(:empty) { height: auto; padding: .05rem .25rem; line-height: 1; }
+
+/* Tarefas: Todos, alternador Lista/Quadro e quadro por prazo */
+.tarefas-topo { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .4rem; }
+.alternador { display: flex; gap: .3rem; margin-bottom: .55rem; } .alternador .btn { min-height: 2.75rem; }
+.tag-lista { display: inline-block; margin-left: .4rem; padding: .05rem .45rem; border-radius: 99px; border: 1px solid var(--c-linha); font-size: .62rem; font-weight: 700; color: var(--c-texto-2); vertical-align: middle; }
+.quadro { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .5rem; align-items: start; }
+.coluna-prazo { background: var(--c-superficie); border-radius: var(--raio-g); padding: .45rem; min-height: 6rem; border: 2px solid transparent; }
+.coluna-prazo.alvo { border-color: var(--c-magenta); }
+.coluna-prazo h3 { font-size: .8rem; margin: 0 0 .4rem; display: flex; justify-content: space-between; }
+.coluna-prazo h3 small { font-weight: 700; color: var(--c-texto-2); }
+.coluna-prazo.cp-atrasadas h3 { color: var(--c-perigo); } .coluna-prazo.cp-hoje h3 { color: var(--c-aviso); }
+.cartao-tarefa { display: flex; flex-direction: column; gap: .3rem; background: var(--c-superficie-2); border-radius: var(--raio); padding: .4rem .5rem; margin-bottom: .35rem; cursor: grab; }
+.cartao-tarefa.arrastando { opacity: .5; }
+.cartao-tarefa .t { font-size: .82rem; font-weight: 700; overflow-wrap: anywhere; }
+.meta-tarefa { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; } .meta-tarefa .tag-lista { margin-left: 0; } .meta-tarefa .data { font-size: .62rem; color: var(--c-texto-2); }
+.acoes-tarefa { display: flex; gap: .3rem; flex-wrap: wrap; } .acoes-tarefa select { flex: 1 1 6rem; min-height: 2.75rem; font-size: .72rem; } .acoes-tarefa .btn { min-height: 2.75rem; }
+@media (max-width: 900px) {
+  .quadro { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: .4rem; }
+  .coluna-prazo { flex: 0 0 82%; scroll-snap-align: start; }
+}
+@media (prefers-reduced-motion: no-preference) { .coluna-prazo { transition: border-color .15s; } }
