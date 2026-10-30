@@ -3,7 +3,7 @@
   'use strict';
   var PS = g.PS = g.PS || {};
   var U = PS.u, S = PS.store;
-  var ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'cartoes', 'relaxar', 'gerenciar', 'importar', 'instalar', 'sincronizar'];
+  var ROTAS = ['', 'rotina', 'tarefas', 'agenda', 'familia', 'cartoes', 'relaxar', 'gerenciar', 'assistente', 'importar', 'instalar', 'sincronizar'];
   var viewAtual = null, paramAtual = '';
   var principal = function () { return document.getElementById('app'); };
 
@@ -23,7 +23,7 @@
   }
 
   function atualizarMenu() {
-    var as = document.querySelectorAll('.menu a');
+    var as = document.querySelectorAll('.menu a, .btn-ajudante');
     Array.prototype.forEach.call(as, function (a) {
       var r = a.getAttribute('href').replace('#/', '');
       if (r === (PS.rotaAtual === 'importar' || PS.rotaAtual === 'instalar' || PS.rotaAtual === 'sincronizar' ? '__' : PS.rotaAtual)) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');

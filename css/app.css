@@ -418,3 +418,50 @@ textarea.entrada { min-height: 5rem; font-size: .6rem; font-family: ui-monospace
   .coluna-prazo { flex: 0 0 82%; scroll-snap-align: start; }
 }
 @media (prefers-reduced-motion: no-preference) { .coluna-prazo { transition: border-color .15s; } }
+/* ---------- Assistente ---------- */
+.tela-ass .cartao { max-width: 46rem; }
+.ass-atalhos { display: flex; flex-wrap: wrap; gap: .4rem; margin: .3rem 0 .6rem; }
+.ass-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; max-height: 55vh; overflow-y: auto; }
+.ass-msg { padding: .5rem .7rem; border-radius: var(--raio-g); background: var(--c-superficie-2); max-width: 92%; overflow-wrap: anywhere; }
+.ass-msg.eu { align-self: flex-end; border: 2px solid var(--c-magenta); }
+.ass-msg.ia { align-self: flex-start; border: 2px solid var(--c-linha); }
+.ass-autor { margin: 0 0 .2rem; font-size: .62rem; font-weight: 700; color: var(--c-magenta-claro); text-transform: uppercase; letter-spacing: .04em; }
+.ass-texto { white-space: pre-wrap; font-size: .78rem; line-height: 1.45; }
+.ass-sug { margin-top: .5rem; padding: .5rem; border-radius: var(--raio); border: 2px dashed var(--c-aviso); }
+.ass-sug p { display: flex; gap: .4rem; align-items: center; margin: 0 0 .4rem; font-size: .72rem; }
+.ass-ok { color: var(--c-ok); }
+.ass-status { min-height: 1.2em; font-size: .7rem; color: var(--c-texto-2); }
+.ass-form textarea { width: 100%; min-height: 2.75rem; resize: vertical; font: inherit; color: var(--c-texto); background: var(--c-fundo); border: 2px solid var(--c-linha); border-radius: var(--raio); padding: .4rem; }
+.ass-form textarea:focus-visible { outline: none; box-shadow: var(--anel); }
+.ass-nota { margin-top: .6rem; font-size: .64rem; color: var(--c-texto-3); }
+@media (max-width: 640px) { .ass-texto { font-size: .92rem; } .ass-atalhos .btn { flex: 1 1 100%; } .ass-msg { max-width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .ass-lista { scroll-behavior: auto; } }
+/* Ajudante: acesso fixo no topo, visível em todas as telas */
+.btn-ajudante { order: 2; margin-left: auto; display: inline-flex; align-items: center; gap: .35rem; min-height: 44px; padding: .25rem .8rem; border-radius: 999px; background: var(--c-magenta); color: var(--c-sobre-magenta); font-size: .72rem; font-weight: 800; white-space: nowrap; text-decoration: none; }
+.btn-ajudante svg { width: 1.1rem; height: 1.1rem; display: block; }
+.btn-ajudante:focus-visible { outline: none; box-shadow: var(--anel); }
+.btn-ajudante[aria-current="page"] { background: var(--c-superficie-2); border: 2px solid var(--c-magenta); }
+.topo .menu { order: 3; }
+.ass-intro { margin: .2rem 0 .5rem; font-size: .78rem; line-height: 1.45; color: var(--c-texto-2); }
+@media (max-width: 640px) { .btn-ajudante { font-size: .9rem; } .ass-intro { font-size: .92rem; } }
+/* Ajudante: entrada por voz */
+.ass-linha-campo { display: flex; gap: .4rem; align-items: stretch; }
+.ass-linha-campo textarea { flex: 1 1 auto; }
+.btn-mic { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; gap: .3rem; }
+.btn-mic.ouvindo { background: var(--c-magenta); color: var(--c-sobre-magenta); border-color: var(--c-magenta); animation: mic-pulso 1.2s ease-in-out infinite; }
+@keyframes mic-pulso { 50% { box-shadow: 0 0 0 6px var(--c-superficie-2); } }
+@media (max-width: 640px) { .btn-mic .mic-rot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { .btn-mic.ouvindo { animation: none; } }
+/* Família > Contas: toque no cartão abre o detalhe */
+.conta-linha .cl-abrir { min-height: 44px; padding: .2rem .25rem; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: var(--raio); }
+.conta-linha .cl-abrir:hover .t { text-decoration: underline; }
+.conta-linha .cl-abrir:focus-visible { outline: none; box-shadow: var(--anel); }
+.det-info { display: grid; gap: .3rem; margin: 0 0 .6rem; }
+.det-linha { display: flex; justify-content: space-between; gap: .6rem; padding: .25rem 0; border-bottom: 1px solid var(--c-linha); }
+.det-linha dt { font-size: .7rem; color: var(--c-texto-2); }
+.det-linha dd { margin: 0; font-size: .8rem; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.det-tit { margin: .4rem 0 .3rem; font-size: .8rem; }
+.det-hist { list-style: none; margin: 0 0 .6rem; padding: 0; max-height: 30vh; overflow-y: auto; }
+.det-hist li { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: .4rem; padding: .25rem 0; font-size: .75rem; border-bottom: 1px solid var(--c-linha); }
+.det-conta .campos { display: grid; gap: .5rem; }
+@media (max-width: 640px) { .det-linha dd, .det-hist li { font-size: .9rem; } }
