@@ -18,7 +18,7 @@
   var PRIORIDADES = ['alta', 'media', 'baixa'];
 
   function vazio() {
-    return { app: 'minha-casa-em-ordem', versao: VERSAO, config: copia(PADRAO_CONFIG), habitos: [], listas: ['Casa', 'Trabalho', 'Maria Alice'], tarefas: [], compromissos: [], lembretes: [], contas: [], links: [], foco: [], cartoes: [], faturas: [], lancs: [], regras: [], radios: [], passeios: [], programa: [], checks: {} };
+    return { app: 'minha-casa-em-ordem', versao: VERSAO, config: copia(PADRAO_CONFIG), habitos: [], listas: ['Casa', 'Trabalho', 'Maria Alice'], tarefas: [], compromissos: [], lembretes: [], contas: [], links: [], foco: [], cartoes: [], faturas: [], lancs: [], regras: [], radios: [], passeios: [], programa: [], compras: [], checks: {} };
   }
   function copia(o) { return JSON.parse(JSON.stringify(o)); }
   function str(v, n) { return U.limitar(v == null ? '' : String(v).replace(/[\u0000-\u001f]/g, ' '), n || 120).trim(); }
@@ -117,6 +117,9 @@
     });
     s.programa = arr(o.programa).slice(0, 200).map(function (x) {
       return { id: id(x), titulo: str(x.titulo, 100) || 'Passeio', data: iso(x.data), hora: U.horaValida(x.hora) ? x.hora : '', local: str(x.local, 120), mapa: urlOk(x.mapa) ? x.mapa : '', compromisso: str(x.compromisso, 40), exemplo: false };
+    });
+    s.compras = arr(o.compras).slice(0, 300).map(function (x) {
+      return { id: id(x), nome: str(x.nome, 80) || 'Item', preco: x.preco == null || x.preco === '' ? null : num(x.preco, 0, 1e6, null), unidade: str(x.unidade, 20), local: str(x.local, 60), comprado: !!x.comprado, exemplo: false };
     });
     if (o.checks && typeof o.checks === 'object') {
       Object.keys(o.checks).forEach(function (k) {
