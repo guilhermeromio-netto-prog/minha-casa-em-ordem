@@ -38,4 +38,23 @@ t('limpar linhas repetidas', C.limpar('- Luz\n- Luz\n- Luz\n- Água') === '- Luz
 t('limpar frase em laço', C.limpar('Tudo certo. Tudo certo. Tudo certo. Tudo certo.') === 'Tudo certo.');
 t('limpar think', C.limpar('<think>x</think>Oi') === 'Oi');
 t('limpar mantém texto normal', C.limpar('Vence sex, 31/10: Luz.') === 'Vence sex, 31/10: Luz.');
+/* próximo evento: respondido direto da agenda */
+['Qual o próximo evento?', 'qual meu proximo compromisso', 'Próximo evento', 'o que tenho de próximo na agenda'].forEach(function (x) {
+  t('próximo: ' + x, (C.classificar(x, SEX) || {}).tipo === 'proximo');
+});
+var ag = { compromissos: [{ titulo: 'Passado', data: '2026-10-29' }, { titulo: 'Aniversário Ana', data: '2026-11-22' }, { titulo: 'Dentista', data: '2026-10-31', hora: '09:00' }, { titulo: 'Exemplo', data: '2026-10-30', exemplo: true }] };
+r = C.responder(C.classificar('Qual o próximo evento?', SEX), ag);
+t('próximo = Dentista sáb 31/10 09:00', r.itens.length === 1 && r.itens[0].titulo === 'Dentista' && /Dentista/.test(r.texto) && /31\/10/.test(r.texto) && /09:00/.test(r.texto) && !/Ana/.test(r.texto));
+r = C.responder(C.classificar('Qual o próximo evento?', SEX), { compromissos: [{ titulo: 'Passado', data: '2026-10-01' }] });
+t('sem próximo evento', r.itens.length === 0 && /Não encontrei compromisso/.test(r.texto));
+t('local: próximo nunca vai ao modelo', C.soLocal(C.classificar('Qual o próximo evento?', SEX)) === true && C.soLocal(C.classificar('O que vence essa semana?', SEX)) === false);
+/* sugestões só quando pedem para criar; resposta vazia não vira "Pronto." */
+t('pede criar', C.pedeCriar('cria uma tarefa pagar luz') && C.pedeCriar('agenda dentista amanhã às 9') && C.pedeCriar('adicione a conta de água'));
+t('não pede criar', !C.pedeCriar('pronto o quê') && !C.pedeCriar('Qual o próximo evento?') && !C.pedeCriar('Por onde começo hoje?'));
+var so = '<<SUGESTAO {"tipo":"compromisso","titulo":"Dentista","data":"2026-10-31"}>>\n\n<<SUGESTAO {"tipo":"tarefa","titulo":"x"}>>';
+t('só sugestões sem pedido => vazio', C.textoFinal(so, 'pronto o quê') === '');
+t('texto + sugestão sem pedido => só o texto', C.textoFinal('Comece pela luz. <<SUGESTAO {"tipo":"tarefa","titulo":"Pagar luz"}>>', 'por onde começo') === 'Comece pela luz.');
+t('pedido de criar mantém o bloco', /SUGESTAO/.test(C.textoFinal('Ok. <<SUGESTAO {"tipo":"tarefa","titulo":"Pagar luz"}>>', 'cria tarefa pagar luz')));
+t('sobra curta => vazio', C.textoFinal('<<SUGESTAO {"tipo":"tarefa","titulo":"a"}>> e .', 'pronto o quê') === '');
+t('mensagem de vazio não é Pronto', /Não entendi/.test(C.SEM_RESPOSTA) && !/^Pronto/.test(C.SEM_RESPOSTA));
 console.log(ok + ' ok, ' + falhas + ' falhas'); process.exit(falhas ? 1 : 0);

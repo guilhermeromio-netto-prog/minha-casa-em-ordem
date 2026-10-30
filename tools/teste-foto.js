@@ -49,4 +49,12 @@ t('sw não guarda imagens enviadas (só GET do próprio site)', !/\/foto['"]/.te
 var st = fsS(__dirname + '/../js/store.js', 'utf8');
 t('store saneia compras', /s\.compras = arr\(o\.compras\)/.test(st));
 t('sync conta compras como dado próprio', /'compras'/.test(fsS(__dirname + '/../js/sync.js', 'utf8')));
+/* resumo para a mensagem da Ajudante */
+var rb = F.resumo(F.normalizar({ destino: 'tarefa', titulo: 'Boleto Enel', data: '12/11/2026', valor: '189,90' }, HJ));
+t('resumo tarefa', /Destino sugerido: Tarefa/.test(rb) && /Boleto Enel/.test(rb) && /12\/11\/2026/.test(rb) && /R\$ 189,90/.test(rb) && !/undefined|null/.test(rb));
+var re = F.resumo(F.normalizar({ destino: 'compras', nome: 'Arroz 5kg', preco: '27,90', local: 'Mercado Bom' }, HJ));
+t('resumo compras', /Lista de compras/.test(re) && /Arroz 5kg/.test(re) && /R\$ 27,90/.test(re) && /Mercado Bom/.test(re) && !/Data/.test(re));
+var ra = F.resumo(F.normalizar({ destino: 'agenda', titulo: 'Dentista', data: '31/10/2026', hora: '09:00' }, HJ));
+t('resumo agenda', /Agenda/.test(ra) && /Dentista/.test(ra) && /31\/10\/2026/.test(ra) && /09:00/.test(ra));
+t('resumo sem dados lidos', /Não consegui ler dados/.test(F.resumo(F.normalizar({}, HJ))));
 console.log(ok + ' ok, ' + falhas + ' falhas'); process.exit(falhas ? 1 : 0);
