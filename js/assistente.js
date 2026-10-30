@@ -77,6 +77,15 @@
           h('button', { class: 'btn primario', type: 'button', 'data-fid': 'ass-confirmar-' + i, onclick: function () { gravar(sg); sg.feito = 'Gravado no app.'; desenhar(); } }, 'Confirmar e gravar'),
           h('button', { class: 'btn', type: 'button', 'data-fid': 'ass-descartar-' + i, onclick: function () { sg.feito = 'Descartado. Nada foi gravado.'; desenhar(); } }, 'Descartar'))));
     }
+    if (m.foto) {
+      var fc = m.foto;
+      filhos.push(h('div', { class: 'ass-sug', role: 'group', 'aria-label': 'Dados lidos da foto' },
+        fc.feito ? h('p', { class: 'ass-ok' }, I('check'), h('span', null, fc.feito)) :
+        h('div', { class: 'acoes' },
+          h('button', { class: 'btn primario', type: 'button', 'data-fid': 'ass-foto-salvar-' + i, onclick: function () { PS.foto.salvar(fc.c, function (msg) { fc.feito = msg + '.'; desenhar(); }); } }, 'Confirmar e salvar'),
+          h('button', { class: 'btn', type: 'button', 'data-fid': 'ass-foto-editar-' + i, onclick: function () { PS.foto.revisar(fc.c, '', function (msg) { fc.feito = msg + '.'; desenhar(); }); } }, 'Editar'),
+          h('button', { class: 'btn', type: 'button', 'data-fid': 'ass-foto-descartar-' + i, onclick: function () { fc.feito = 'Descartado. Nada foi salvo.'; desenhar(); } }, 'Descartar'))));
+    }
     return h('li', { class: 'ass-msg ' + (m.papel === 'user' ? 'eu' : 'ia') }, filhos);
   }
 
@@ -106,7 +115,7 @@
       texto = String(texto || '').trim(); if (!texto || enviando) return;
       conversa.push({ papel: 'user', texto: texto }); campo.value = '';
       var hj = U.hoje(), q = C.classificar(texto, hj), fechada = q ? C.responder(q, dadosConsulta()) : null;
-      if (fechada && (rapida || !fechada.itens.length)) { responderLocal(fechada.texto); desenhar(); return; }
+      if (fechada && (rapida || C.soLocal(q) || !fechada.itens.length)) { responderLocal(fechada.texto); desenhar(); return; }
       enviando = true; desenhar();
       var ctx = fechada ? 'LISTA FECHADA (estes são TODOS os itens; reformule só esta lista, não acrescente nada):\n' + fechada.texto : contexto();
       var permitido = fechada ? fechada.permitido : C.permitidoResposta(ctx, texto, hj);
@@ -115,9 +124,9 @@
         .then(function (r) { return r.json().catch(function () { return { erro: 'Resposta inválida.' }; }); })
         .then(function (j) {
           if (j && j.resposta) {
-            var p = separar(C.limpar(j.resposta));
+            var p = separar(C.textoFinal(C.limpar(j.resposta), texto));
             if (fechada) { if (C.fiel(p.texto, permitido)) conversa.push({ papel: 'assistant', texto: p.texto || fechada.texto }); else responderLocal(fechada.texto); }
-            else if (C.fiel(p.texto, permitido)) conversa.push({ papel: 'assistant', texto: p.texto || 'Pronto.', sugestao: p.sugestao });
+            else if (C.fiel(p.texto, permitido)) conversa.push({ papel: 'assistant', texto: p.texto || (p.sugestao ? 'Posso adicionar isto:' : C.SEM_RESPOSTA), sugestao: p.sugestao });
             else responderLocal('Não encontrei isso nos dados do app. Pergunte, por exemplo, o que vence essa semana ou o que tem na agenda amanhã.');
           }
           else conversa.push({ papel: 'assistant', texto: 'Não consegui responder: ' + ((j && j.erro) || 'erro desconhecido') });
@@ -144,9 +153,17 @@
       marcarOuvindo(true);
       try { rec.start(); } catch (e) { marcarOuvindo(false); }
     }
+    /* foto na conversa: a imagem vai para /foto, a resposta vira mensagem com confirmar/editar; a foto é descartada */
+    var fotoCb = {
+      inicio: function () { fotoBox.hidden = true; conversa.push({ papel: 'user', texto: 'Enviei uma foto.', local: true }); enviando = true; status.textContent = 'Lendo a imagem…'; desenhar(); },
+      sucesso: function (c) { enviando = false; status.textContent = ''; conversa.push({ papel: 'assistant', texto: PS.fotoNucleo.resumo(c), foto: { c: c }, local: true }); desenhar(); },
+      erro: function (msg) { enviando = false; status.textContent = ''; conversa.push({ papel: 'assistant', texto: 'Não consegui ler a imagem. ' + msg, local: true }); desenhar(); }
+    };
+    var fotoBox = h('div', { class: 'acoes ft-acoes', 'data-fid': 'ass-foto-opcoes', hidden: 'hidden' }, PS.foto ? PS.foto.botao(fotoCb) : []);
     var form = h('form', { class: 'ass-form', onsubmit: function (e) { e.preventDefault(); enviar(campo.value); } },
       h('label', { class: 'campo', 'for': 'ass-pergunta' }, h('span', null, 'Sua pergunta')), h('div', { class: 'ass-linha-campo' }, campo, mic), h('div', { class: 'acoes' }, btn,
-        h('button', { class: 'btn', type: 'button', 'data-fid': 'ass-limpar', onclick: function () { conversa = []; desenhar(); } }, 'Limpar conversa')));
+        h('button', { class: 'btn', type: 'button', 'data-fid': 'ass-foto', 'aria-expanded': 'false', onclick: function () { var ab = fotoBox.hidden; fotoBox.hidden = !ab; this.setAttribute('aria-expanded', ab ? 'true' : 'false'); } }, I('camera'), 'Foto'),
+        h('button', { class: 'btn', type: 'button', 'data-fid': 'ass-limpar', onclick: function () { conversa = []; desenhar(); } }, 'Limpar conversa')), fotoBox);
     campo.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(campo.value); } });
     var atalhos = h('div', { class: 'ass-atalhos', role: 'group', 'aria-label': 'Perguntas rápidas' },
       ['O que vence essa semana?', 'Tem conta atrasada?', 'Quais tarefas são prioridade alta?', 'O que tenho na agenda amanhã?'].map(function (q, i) {

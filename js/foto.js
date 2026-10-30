@@ -33,10 +33,11 @@
     });
   }
 
-  function enviar(arquivo) {
+  /* o (opcional, Ajudante): { inicio(), sucesso(campos), erro(msg) } no lugar do modal */
+  function enviar(arquivo, o) {
     if (ocupado) return; ocupado = true;
     var cancelado = false;
-    PS.modal.abrir('Lendo a imagem', h('p', { role: 'status', 'data-fid': 'ft:lendo' }, 'Lendo a imagem… isso leva alguns segundos.'), [{ rotulo: 'Cancelar', acao: function () { ocupado = false; cancelado = true; } }]);
+    if (o) o.inicio(); else PS.modal.abrir('Lendo a imagem', h('p', { role: 'status', 'data-fid': 'ft:lendo' }, 'Lendo a imagem… isso leva alguns segundos.'), [{ rotulo: 'Cancelar', acao: function () { ocupado = false; cancelado = true; } }]);
     reduzir(arquivo).then(function (img) {
       arquivo = null;
       var corpo = JSON.stringify({ imagem: img, hoje: hojeBR() }); img = null;
@@ -44,26 +45,29 @@
       corpo = null;
       return p;
     }).then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.campos) throw new Error(j.erro || 'erro'); return j.campos; }); })
-      .then(function (campos) { ocupado = false; if (cancelado) return; PS.modal.fechar(true); revisar(F.normalizar(campos, U.hoje())); },
-        function (e) { ocupado = false; arquivo = null; if (cancelado) return; PS.modal.abrir('Não consegui ler a imagem', h('p', null, (e && e.message && e.message !== 'erro' && e.message.length < 120 ? e.message : 'Tente outra foto ou confira a conexão.') + ' A imagem foi descartada.'), [{ rotulo: 'Entendi' }]); });
+      .then(function (campos) { ocupado = false; if (cancelado) return; if (o) return o.sucesso(F.normalizar(campos, U.hoje())); PS.modal.fechar(true); revisar(F.normalizar(campos, U.hoje())); },
+        function (e) { ocupado = false; arquivo = null; if (cancelado) return; var msg = (e && e.message && e.message !== 'erro' && e.message.length < 120 ? e.message : 'Tente outra foto ou confira a conexão.') + ' A imagem foi descartada.'; if (o) return o.erro(msg); PS.modal.abrir('Não consegui ler a imagem', h('p', null, msg), [{ rotulo: 'Entendi' }]); });
   }
 
-  /* botão Fotografar / Enviar print: câmera ou galeria (o próprio celular oferece as duas) */
-  function escolher() {
-    var inp = h('input', { type: 'file', accept: 'image/*', style: 'position:fixed;left:-9999px', 'aria-hidden': 'true', tabindex: '-1', 'data-fid': 'ft:arquivo' });
+  /* Tirar foto abre a câmera traseira direto (capture=environment); Escolher da galeria abre o seletor de imagens */
+  function escolher(camera, o) {
+    var at = { type: 'file', accept: 'image/*', style: 'position:fixed;left:-9999px', 'aria-hidden': 'true', tabindex: '-1', 'data-fid': 'ft:arquivo' };
+    if (camera) at.capture = 'environment';
+    var inp = h('input', at);
     inp.addEventListener('change', function () {
       var f = inp.files && inp.files[0];
       inp.value = ''; if (inp.parentNode) inp.parentNode.removeChild(inp);
-      if (f) enviar(f);
+      if (f) enviar(f, o);
     });
     document.body.appendChild(inp); inp.click();
   }
-  function botao(extra) {
-    return h('button', { class: 'btn primario btn-foto' + (extra ? ' ' + extra : ''), type: 'button', 'data-fid': 'ft:botao', onclick: escolher }, I('camera'), 'Fotografar / Enviar print');
+  function botao(o) {
+    return [h('button', { class: 'btn primario btn-foto', type: 'button', 'data-fid': 'ft:camera', onclick: function () { escolher(true, o); } }, I('camera'), 'Tirar foto'),
+      h('button', { class: 'btn btn-foto', type: 'button', 'data-fid': 'ft:galeria', onclick: function () { escolher(false, o); } }, I('baixar'), 'Escolher da galeria')];
   }
 
   var ROT = { compras: 'Lista de compras', tarefa: 'Tarefa', agenda: 'Agenda' };
-  function revisar(c, erro) {
+  function revisar(c, erro, aoSalvar) {
     var corpo = h('div', { class: 'campos ft-revisao', 'data-fid': 'ft:revisao' });
     function campo(rot, k, attrs, valor) {
       var a = { class: 'entrada', 'data-fid': 'ft:' + k, value: valor, oninput: function () { c['_' + k] = this.value; } };
@@ -101,27 +105,28 @@
       { rotulo: 'Cancelar' },
       { rotulo: 'Salvar', tipo: 'primario', acao: function () {
         var bruto = c._data; lerCampos();
-        if (bruto && !c.data) return revisar(c, 'Data inválida. Use DD/MM/AAAA.');
-        salvar(c);
+        if (bruto && !c.data) return revisar(c, 'Data inválida. Use DD/MM/AAAA.', aoSalvar);
+        salvar(c, aoSalvar);
       } }]);
     var pr = corpo.querySelector('[data-fid="ft:destino"]'); if (pr) pr.focus();
   }
 
-  function salvar(c) {
+  function salvar(c, aoSalvar) {
+    function fim(m) { PS.aviso(m); if (aoSalvar) aoSalvar(m); return m; }
     if (c.destino === 'compras') {
-      if (!c.nome) return revisar(c, 'Informe o produto.');
+      if (!c.nome) return revisar(c, 'Informe o produto.', aoSalvar);
       S.alterar(function (s) { s.compras.unshift(F.paraCompra(c, U.uid())); });
-      PS.aviso('Item salvo na lista de compras'); return;
+      return fim('Item salvo na lista de compras');
     }
-    if (!c.titulo) return revisar(c, 'Informe o título.');
+    if (!c.titulo) return revisar(c, 'Informe o título.', aoSalvar);
     if (c.destino === 'agenda') {
       var cp = F.paraCompromisso(c, U.uid());
-      if (!cp) return revisar(c, 'A agenda precisa de uma data.');
+      if (!cp) return revisar(c, 'A agenda precisa de uma data.', aoSalvar);
       S.alterar(function (s) { s.compromissos.push(cp); });
-      PS.aviso('Compromisso salvo na agenda'); return;
+      return fim('Compromisso salvo na agenda');
     }
     S.alterar(function (s) { s.tarefas.unshift(F.paraTarefa(c, U.uid(), s.listas[0])); });
-    PS.aviso('Tarefa salva');
+    return fim('Tarefa salva');
   }
 
   /* ---------- tela Lista de compras ---------- */
@@ -147,5 +152,5 @@
         feitos ? h('div', { class: 'acoes' }, h('button', { class: 'btn', type: 'button', 'data-fid': 'cp:limpar', onclick: function () { S.alterar(function (st) { st.compras = st.compras.filter(function (y) { return !y.comprado; }); }); } }, 'Limpar comprados')) : null));
   } };
 
-  PS.foto = { escolher: escolher, botao: botao, revisar: revisar, reduzir: reduzir };
+  PS.foto = { salvar: salvar, escolher: escolher, botao: botao, revisar: revisar, reduzir: reduzir };
 })(window);

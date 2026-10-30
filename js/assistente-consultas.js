@@ -19,6 +19,7 @@
     if (/atrasad|vencid|em atraso/.test(p)) return { tipo: 'atrasadas', ini: '', fim: somaDias(hoje, -1), rotulo: 'atrasadas' };
     if (/prioridade/.test(p) && /alta|urgent/.test(p)) return { tipo: 'prioridade', rotulo: 'prioridade alta' };
     if (/venc|pagar|contas?\b/.test(p) && /semana/.test(p)) return { tipo: 'vencimentos', ini: hoje, fim: fimSemana(hoje), rotulo: rotSemana(hoje) };
+    if (/proxim/.test(p) && /evento|compromisso|agenda|marcad|consulta|reuni/.test(p)) return { tipo: 'proximo', ini: hoje, rotulo: 'próximo compromisso' };
     if (/agenda|compromisso|marcado|tenho|reuni|consulta/.test(p)) {
       if (/depois de amanha/.test(p)) { var d2 = somaDias(hoje, 2); return { tipo: 'agenda', ini: d2, fim: d2, rotulo: 'depois de amanhã (' + ddmm(d2) + ')' }; }
       if (/amanha/.test(p)) return { tipo: 'agenda', ini: am, fim: am, rotulo: 'amanhã (' + ddmm(am) + ')' };
@@ -34,7 +35,11 @@
   function responder(q, d) {
     d = d || {}; var itens = [], linhas, texto, p = vazio();
     function real(x) { return x && !x.exemplo; }   /* dados de EXEMPLO (dados.json) nunca entram nas respostas */
-    if (q.tipo === 'agenda') {
+    if (q.tipo === 'proximo') {
+      itens = (d.compromissos || []).filter(real).filter(function (c) { return c.data && c.data >= q.ini; })
+        .sort(function (a, b) { return (a.data + (a.hora || '')) < (b.data + (b.hora || '')) ? -1 : 1; }).slice(0, 1);
+      texto = itens.length ? 'Próximo compromisso: ' + itens[0].titulo + ', ' + curta(itens[0].data) + (itens[0].hora ? ' às ' + itens[0].hora : '') + (itens[0].local ? ' (' + itens[0].local + ')' : '') + '.' : 'Não encontrei compromisso a partir de hoje na agenda.';
+    } else if (q.tipo === 'agenda') {
       itens = (d.compromissos || []).filter(real).filter(function (c) { return c.data >= q.ini && c.data <= q.fim; })
         .sort(function (a, b) { return (a.data + (a.hora || '')) < (b.data + (b.hora || '')) ? -1 : 1; });
       linhas = itens.map(function (c) { return '- ' + curta(c.data) + (c.hora ? ' às ' + c.hora : '') + ': ' + c.titulo + (c.local ? ' (' + c.local + ')' : ''); });
@@ -99,7 +104,20 @@
     return true;
   }
 
-  var C = { permitidoResposta: permitidoResposta, limpar: limpar, classificar: classificar, responder: responder, fiel: fiel, permitidoDeTexto: permitidoDeTexto, somaDias: somaDias, fimSemana: fimSemana };
+  /* respostas que o app dá sozinho, sem passar pelo modelo */
+  function soLocal(q) { return !!q && q.tipo === 'proximo'; }
+  /* o usuário pediu para CRIAR algo? só então o bloco <<SUGESTAO>> é aceito */
+  function pedeCriar(t) { return /\b(cri[ae]r?|adicion\w*|acrescent\w*|agend[ae]r?|marc[ae]r?|anot[ae]r?|lembr[ae]r?|coloc[ae]r?|inclu\w*|registr\w*|cadastr\w*|nova|novo)\b/.test(sem(t)); }
+  var SEM_RESPOSTA = 'Não entendi a pergunta. Tente, por exemplo: qual o próximo evento, o que vence essa semana ou quais tarefas tenho.';
+  /* tira blocos <<SUGESTAO>> não pedidos; se sobrar só lixo, devolve '' */
+  function textoFinal(bruto, pergunta) {
+    var t = String(bruto || '');
+    if (!pedeCriar(pergunta)) t = t.replace(/<<\s*SUGEST[AÃ]O[\s\S]*?>>/gi, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    var semBloco = t.replace(/<<[\s\S]*?>>/g, '');
+    if (!/SUGEST/i.test(t) && (semBloco.match(/[a-zA-Zà-úÀ-Ú]/g) || []).length < 8) return '';
+    return t;
+  }
+  var C = { soLocal: soLocal, pedeCriar: pedeCriar, SEM_RESPOSTA: SEM_RESPOSTA, textoFinal: textoFinal, permitidoResposta: permitidoResposta, limpar: limpar, classificar: classificar, responder: responder, fiel: fiel, permitidoDeTexto: permitidoDeTexto, somaDias: somaDias, fimSemana: fimSemana };
   if (typeof module !== 'undefined' && module.exports) module.exports = C;
   if (raiz) { raiz.PS = raiz.PS || {}; raiz.PS.consultas = C; }
 })(typeof window !== 'undefined' ? window : null);

@@ -71,5 +71,18 @@
     var k = Math.min(1, max / Math.max(w, h));
     return { w: Math.round(w * k), h: Math.round(h * k) };
   }
-  return { DESTINOS: DESTINOS, data: data, preco: preco, hora: hora, normalizar: normalizar, paraCompra: paraCompra, paraTarefa: paraTarefa, paraCompromisso: paraCompromisso, dimensoes: dimensoes, brl: brl };
+  /* texto curto do que foi lido, para a mensagem da Ajudante (só campos preenchidos) */
+  var ROTULOS = { compras: 'Lista de compras', tarefa: 'Tarefa', agenda: 'Agenda' };
+  function resumo(c) {
+    var l = [];
+    function br(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4); }
+    if (c.destino === 'compras') {
+      if (c.nome) l.push('Produto: ' + c.nome); if (c.preco != null) l.push('Preço: ' + brl(c.preco) + (c.unidade ? ' / ' + c.unidade : '')); if (c.local) l.push('Onde: ' + c.local);
+    } else {
+      if (c.titulo) l.push('Título: ' + c.titulo); if (c.data) l.push('Data: ' + br(c.data)); if (c.hora) l.push('Hora: ' + c.hora);
+      if (c.valor != null) l.push('Valor: ' + brl(c.valor)); if (c.local) l.push('Local: ' + c.local);
+    }
+    return 'Li a imagem. Destino sugerido: ' + ROTULOS[c.destino] + '.\n' + (l.length ? l.join('\n') : 'Não consegui ler dados na imagem. Toque em Editar para preencher.');
+  }
+  return { resumo: resumo, DESTINOS: DESTINOS, data: data, preco: preco, hora: hora, normalizar: normalizar, paraCompra: paraCompra, paraTarefa: paraTarefa, paraCompromisso: paraCompromisso, dimensoes: dimensoes, brl: brl };
 });
