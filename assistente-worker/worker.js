@@ -4,6 +4,8 @@
 var API = 'https://api.liquid.ai/openai/v1/chat/completions';
 var MODELO = 'lfm3-1.7b';
 var ORIGENS = ['https://minha-casa-em-ordem.guilhermeromionetto.workers.dev', 'https://guilhermeromio-netto-prog.github.io', 'https://guilh-abc.github.io', 'http://localhost:8787', 'http://127.0.0.1:8787', 'http://localhost:8099'];
+export var MODELO_FOTO = 'lfm3-vl-2b';
+var MAX_FOTO = 2.2e6;
 var MAX_CORPO = 24e3, MAX_MSGS = 12, MAX_TXT = 4e3, LIM_IP = 20, JANELA = 6e5, LIM_DIA = 400;
 var porIp = new Map(), dia = { d: '', n: 0 };
 /* parâmetros do modelo (exportados para teste) */
@@ -43,15 +45,62 @@ export function montarCorpo(corpo) {
   Object.keys(PARAMS).forEach(function (k) { o[k] = PARAMS[k]; });
   return o;
 }
+/* rota /foto: lê etiqueta de preço, boleto, convite ou print. A imagem só passa pela memória: não é guardada, nem logada, nem devolvida. */
+var SISTEMA_FOTO = 'Você lê fotos e prints para o app Minha Casa em Ordem, de uma família brasileira. ' +
+  'Responda SÓ com um objeto JSON numa linha, sem texto em volta. Escolha o destino: ' +
+  '"compras" para etiqueta de preço ou produto; "tarefa" para boleto, conta ou fatura a pagar; "agenda" só para convite, consulta ou evento com dia e hora. ' +
+  'Formato para compras: {"destino":"compras","nome":"produto","preco":"R$ 0,00","unidade":"kg","local":"nome da loja escrito na imagem"}. ' +
+  'Para boleto: {"destino":"tarefa","titulo":"Pagar boleto <beneficiário>","data":"vencimento DD/MM/AAAA","valor":"R$ 0,00"}. ' +
+  'Para evento: {"destino":"agenda","titulo":"...","data":"DD/MM/AAAA","hora":"HH:MM","local":"..."}. ' +
+  'Datas SEMPRE no formato brasileiro DD/MM/AAAA (dia primeiro). Copie números exatamente como aparecem. Deixe "" no que não aparecer. Nunca invente.';
+var CHAVES_FOTO = ['destino', 'nome', 'preco', 'unidade', 'local', 'titulo', 'data', 'hora', 'valor'];
+export function montarFoto(corpo) {
+  var img = corpo && typeof corpo.imagem === 'string' ? corpo.imagem : '';
+  if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(img)) return null;
+  var hoje = txt(corpo.hoje, 40);
+  return { model: MODELO_FOTO, max_tokens: 300, temperature: 0.1, chat_template_kwargs: { enable_thinking: false },
+    messages: [{ role: 'system', content: SISTEMA_FOTO + (hoje ? ' Hoje é ' + hoje + '.' : '') },
+      { role: 'user', content: [{ type: 'image_url', image_url: { url: img } }, { type: 'text', text: 'Extraia os dados desta imagem.' }] }] };
+}
+export function lerFoto(t) {
+  var s = String(t || ''), i = s.indexOf('{'), j = s.lastIndexOf('}');
+  if (i < 0 || j <= i) return null;
+  var o; try { o = JSON.parse(s.slice(i, j + 1)); } catch (e) { return null; }
+  if (!o || typeof o !== 'object') return null;
+  var r = {}; CHAVES_FOTO.forEach(function (k) { if (typeof o[k] === 'string' || typeof o[k] === 'number') r[k] = typeof o[k] === 'string' ? o[k].slice(0, 160) : o[k]; });
+  return r;
+}
+async function rotaFoto(req, env, origem) {
+  if (Number(req.headers.get('Content-Length') || 0) > MAX_FOTO) return resp({ erro: 'Foto grande demais.' }, 413, origem);
+  var bruto = await req.text();
+  if (bruto.length > MAX_FOTO) return resp({ erro: 'Foto grande demais.' }, 413, origem);
+  var lim = limitar(req.headers.get('CF-Connecting-IP') || 'x');
+  if (lim) return resp({ erro: lim }, 429, origem);
+  var corpo; try { corpo = JSON.parse(bruto); } catch (e) { return resp({ erro: 'JSON inválido.' }, 400, origem); }
+  bruto = null;
+  var envio = montarFoto(corpo); corpo = null;
+  if (!envio) return resp({ erro: 'Envie uma imagem JPEG, PNG ou WebP.' }, 400, origem);
+  var r;
+  try { r = await fetch(API, { method: 'POST', headers: { 'Authorization': 'Bearer ' + env.LIQUID_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(envio) }); }
+  catch (e) { return resp({ erro: 'Não consegui falar com a Liquid AI.' }, 502, origem); }
+  finally { envio = null; }
+  if (!r.ok) return resp({ erro: 'A Liquid AI respondeu com erro (' + r.status + ').' }, 502, origem);
+  var j; try { j = await r.json(); } catch (e) { return resp({ erro: 'Resposta inválida da Liquid AI.' }, 502, origem); }
+  var c = j && j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content || '' : '';
+  var campos = lerFoto(c);
+  if (!campos) return resp({ erro: 'Não consegui ler a imagem. Tente outra foto.' }, 422, origem);
+  return resp({ campos: campos, modelo: MODELO_FOTO }, 200, origem);
+}
 export default {
   async fetch(req, env) {
     var url = new URL(req.url), origem = req.headers.get('Origin') || '';
     if (url.pathname === '/saude') return resp({ ok: true, modelo: MODELO }, 200, origem);
-    if (url.pathname !== '/chat') return resp({ erro: 'Rota não encontrada.' }, 404, origem);
+    if (url.pathname !== '/chat' && url.pathname !== '/foto') return resp({ erro: 'Rota não encontrada.' }, 404, origem);
     if (req.method === 'OPTIONS') return new Response(null, { status: ORIGENS.indexOf(origem) >= 0 ? 204 : 403, headers: cors(origem) });
     if (req.method !== 'POST') return resp({ erro: 'Use POST.' }, 405, origem);
     if (ORIGENS.indexOf(origem) < 0) return resp({ erro: 'Origem não permitida.' }, 403, origem);
     if (!env.LIQUID_API_KEY) return resp({ erro: 'Assistente sem configuração.' }, 503, origem);
+    if (url.pathname === '/foto') return rotaFoto(req, env, origem);
     if (Number(req.headers.get('Content-Length') || 0) > MAX_CORPO) return resp({ erro: 'Pergunta grande demais.' }, 413, origem);
     var bruto = await req.text();
     if (bruto.length > MAX_CORPO) return resp({ erro: 'Pergunta grande demais.' }, 413, origem);
