@@ -220,7 +220,10 @@
     return h('div', null, h('h1', { class: 'titulo-tela' }, 'Família e contas', h('small', null, 'toque OK para marcar')),
       h('div', { class: 'duas-colunas' },
         cartao('Lembretes', 'sino', li.length ? li : h('p', { class: 'vazio' }, 'Nenhum lembrete. Cadastre em Gerenciar → Família.')),
-        PS.finUI.painel(s, hoje)));
+        PS.finUI.painel(s, hoje),
+        cartao('Lista de compras', 'sacola', h('div', null,
+          h('p', { class: 'dica' }, (function (n) { return n ? n + (n === 1 ? ' item a comprar.' : ' itens a comprar.') : 'Nada a comprar agora.'; })((s.compras || []).filter(function (x) { return !x.comprado; }).length)),
+          h('div', { class: 'acoes ft-acoes' }, PS.foto ? PS.foto.botao() : null, h('a', { class: 'btn', href: '#/compras', 'data-fid': 'fam:compras' }, 'Abrir lista'))))));
   } };
 
   /* ---------- RELAXAR ---------- */

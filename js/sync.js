@@ -152,7 +152,7 @@
   function cancelarEntrada() { var p = pendente; pendente = null; if (p) return revogarToken(p.dados.token); return Promise.resolve(); }
   function temDadosProprios() {
     var s = S.get(), n = 0;
-    ['habitos', 'tarefas', 'compromissos', 'lembretes', 'contas', 'links', 'foco', 'cartoes', 'faturas', 'lancs', 'regras', 'radios', 'passeios', 'programa'].forEach(function (c) { (s[c] || []).forEach(function (x) { if (!x.exemplo) n++; }); });
+    ['habitos', 'tarefas', 'compromissos', 'lembretes', 'contas', 'links', 'foco', 'cartoes', 'faturas', 'lancs', 'regras', 'radios', 'passeios', 'programa', 'compras'].forEach(function (c) { (s[c] || []).forEach(function (x) { if (!x.exemplo) n++; }); });
     return n > 0;
   }
   /* modo: 'juntar' (padrão) ou 'familia' (descarta os dados deste aparelho e usa só os da família) */
