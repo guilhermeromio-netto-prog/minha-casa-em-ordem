@@ -22,9 +22,10 @@ with sync_playwright() as p:
     b = p.chromium.launch(executable_path=a.chrome) if a.chrome else p.chromium.launch()
     for w, hh in [(390, 844), (1280, 800)]:
         ctx = b.new_context(viewport={'width': w, 'height': hh}); ctx.add_init_script(RELOGIO + VOZ)
-        enviados = []
+        enviados = []; SO_SUG = '<<SUGESTAO {"tipo":"compromisso","titulo":"Dentista","data":"2026-10-31","hora":"09:00"}>>\n\n<<SUGESTAO {"tipo":"tarefa","titulo":"Trocar filtro"}>>'
         def rota(r):
             enviados.append(json.loads(r.request.post_data or '{}'))
+            if 'pronto o' in (r.request.post_data or ''): return r.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}, body=json.dumps({'resposta': SO_SUG}))
             r.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}, body=json.dumps({'resposta': 'A conta de luz vence sáb, 31/10. A conta de luz vence sáb, 31/10. A conta de luz vence sáb, 31/10.......'}))
         ctx.route('**/minha-casa-assistente**', rota)
         pg = ctx.new_page(); erros = []; pg.on('pageerror', lambda e: erros.append(str(e)))
@@ -41,6 +42,13 @@ with sync_playwright() as p:
         pg.fill('[data-fid="ass-pergunta"]', 'Me fala da conta de luz'); pg.locator('[data-fid="ass-enviar"]').click(); pg.wait_for_timeout(500)
         t = pg.locator('.ass-msg.ia .ass-texto').last.inner_text()
         check(t.count('vence') == 1 and '...' not in t and '…' not in t, '[%d] resposta do modelo sem repetição nem reticências: %r' % (w, t))
+        n0 = len(enviados)
+        pg.fill('[data-fid="ass-pergunta"]', 'Qual o próximo evento?'); pg.locator('[data-fid="ass-enviar"]').click(); pg.wait_for_timeout(300)
+        t = pg.locator('.ass-msg.ia .ass-texto').last.inner_text()
+        check('Dentista' in t and '31/10' in t and '09:00' in t and len(enviados) == n0, '[%d] próximo evento respondido da agenda, sem modelo: %r' % (w, t))
+        pg.fill('[data-fid="ass-pergunta"]', 'pronto o quê'); pg.locator('[data-fid="ass-enviar"]').click(); pg.wait_for_timeout(500)
+        t = pg.locator('.ass-msg.ia .ass-texto').last.inner_text()
+        check(t.strip() != 'Pronto.' and 'Não entendi' in t and pg.locator('.ass-msg.ia').last.locator('[data-fid^="ass-sug"]').count() == 0, '[%d] só blocos SUGESTAO não pedidos => sem "Pronto." e sem cartão: %r' % (w, t))
         if a.prints and w == 390: pg.screenshot(path=a.prints + '/ajudante-respostas-390.png', full_page=False); pg.wait_for_timeout(500)
         mic = pg.locator('[data-fid="ass-voz"]')
         bb = mic.bounding_box()
